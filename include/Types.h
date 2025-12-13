@@ -6,8 +6,8 @@
 #define BOOKSTORE_TYPES_H
 // 用户账号
 struct UserRecord {
-    char username[32];
-    char password[32];
+    std::string userID;
+    std::string password;
     int privilege; // visitor = 0, customer = 1, clerk = 3, admin = 7
 };
 

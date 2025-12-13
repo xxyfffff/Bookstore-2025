@@ -9,13 +9,17 @@ include_directories(include)
 add_executable(Bookstore_2025
         include/Types.h
         include/Utils.h
-        scr/Utils.cpp
         include/Utils.h
         include/CmdParser.h
         include/AccountManager.h
         include/BookManager.h
         include/Logger.h
+        include/Persistence.h
+        scr/Persistence.cpp
+        scr/Utils.cpp
         scr/AccountManager.cpp
         scr/BookManager.cpp
         scr/CmdParser.cpp
-        scr/Logger.cpp)
+        scr/Logger.cpp
+        scr/Persistence.cpp
+        scr/main.cpp)

@@ -25,12 +25,11 @@ std::vector<std::string> CmdParser::tokenize(const std::string &line) {
         else {
             token += c;
         }
-        if (!token.empty()) {
-            res.push_back(token);
-        }
-
-        return res;
     }
+    if (!token.empty()) {
+        res.push_back(token);
+    }
+    return res;
 }
 
 CommandType CmdParser::determineType(const std::vector<std::string> &tokens) {
@@ -47,14 +46,27 @@ CommandType CmdParser::determineType(const std::vector<std::string> &tokens) {
     if (cmd == "useradd") return CommandType::USERADD;
     if (cmd == "delete") return CommandType::DELETE;
     if (cmd == "passwd") return CommandType::PASSWD;
-    if (cmd == "show") return CommandType::SHOW;
+    if (cmd == "show") {
+        const std::string &cmd2 = tokens[1];
+        if (cmd2 == "finance") {
+            return CommandType::SHOWFINANCE;
+        }
+        return CommandType::SHOW;
+    }
     if (cmd == "buy") return CommandType::BUY;
     if (cmd == "select") return CommandType::SELECT;
     if (cmd == "modify") return CommandType::MODIFY;
     if (cmd == "import") return CommandType::IMPORT;
-    if (cmd == "show_finance") return CommandType::SHOWFINANCE;
     if (cmd == "log") return CommandType::LOG;
-
+    if (cmd == "report") {
+        const std::string &cmd2 = tokens[1];
+        if (cmd2 == "finance") {
+            return CommandType::REPORTFINANCE;
+        }
+        if (cmd2 == "employee") {
+            return CommandType::REPORTEMLOYEE;
+        }
+    }
     return CommandType::INVALID;
 }
 
@@ -89,6 +101,10 @@ bool CmdParser::validate(const std:: vector<std::string> &t, CommandType type) {
             return n == 1 || n == 2;
         case CommandType::LOG:
             return n == 1;
+        case CommandType::REPORTFINANCE:
+            return n == 2;
+        case CommandType::REPORTEMLOYEE:
+            return n == 2;
         default:
             return false;
     }
