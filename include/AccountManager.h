@@ -36,6 +36,7 @@ public:
     bool isLoggedIn() const;
     int currentPrivilege() const;
     std::string currentUserID() const;
+    std::string currentPasswd() const;
 
 private:
     Persistence &db;

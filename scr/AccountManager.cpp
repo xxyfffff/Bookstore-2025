@@ -2,6 +2,9 @@
 // Created by yifei on 12/12/2025.
 //
 #include "AccountManager.h"
+
+#include <iostream>
+
 #include "Persistence.h"
 AccountManager::AccountManager(Persistence &db) : db(db) {}
 
@@ -23,6 +26,13 @@ std::string AccountManager::currentUserID() const {
     return loginStack.back().user.userID;
 }
 
+std::string AccountManager::currentPasswd() const {
+    if (loginStack.empty()) {
+        return "";
+    }
+    return loginStack.back().user.password;
+}
+
 bool AccountManager::login(const std::string &userID,
                            const std::string &password) {
     UserRecord user;
@@ -32,21 +42,19 @@ bool AccountManager::login(const std::string &userID,
     if (user.password != password) {
         return false;
     }
+    loginStack.push_back({user});
+    return true;
 }
 
 bool AccountManager::su(const std::string &targetUserID) {
-    if (!isLoggedIn()) {
-        return false;
-    }
-
     UserRecord target;
+    if (target.privilege < currentPrivilege()) {
+        loginStack.push_back({target});
+        return true;
+    }
     if (!db.getUser(targetUserID, target)) {
         return false;
     }
-    if (target.privilege > currentPrivilege()) {
-        return false;
-    }
-
     loginStack.push_back({target});
     return true;
 }
@@ -67,8 +75,7 @@ bool AccountManager::changePassword(const std::string &userID,
         return false;
     }
 
-    bool isSelf = (isLoggedIn() &&
-                  currentUserID() == userID);
+    bool isSelf = (isLoggedIn() && currentUserID() == userID);
     bool isAdmin = (currentPrivilege() == 7);
 
     if (!isSelf && !isAdmin) {
@@ -85,7 +92,8 @@ bool AccountManager::changePassword(const std::string &userID,
 bool AccountManager::addUser(const std::string &userID,
                              const std::string &password,
                              int privilege) {
-    if (currentPrivilege() != 7) {
+
+    if (currentPrivilege() < privilege && privilege != 1) {
         return false;
     }
     if (privilege >= 7) {

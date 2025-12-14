@@ -29,7 +29,7 @@ struct BookRecord {
 // 某用户当前选中的书籍
 struct SelectedBook {
     bool hasSelect;           // 是否已选书
-    char ISBN[32];
+    char ISBN[20];
 };
 
 // 倒排索引项：key -> ISBN
