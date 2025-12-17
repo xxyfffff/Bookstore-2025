@@ -11,8 +11,8 @@
 namespace user{
 
     struct UserDiskRecord {
-        char userID[64];
-        char password[64];
+        char userID[30];
+        char password[30];
         int privilege;
         bool valid;
     };
@@ -307,8 +307,30 @@ public:
 class Persistence::Impl {
 public:
     PieceNode index;
+    PieceNode nameIndex;
+    PieceNode authorIndex;
+    PieceNode keywordIndex;
 
-    Impl() : index("bookstore_index.db") {}
+    std::fstream bookFile;
+
+    int bookCount;
+
+    Impl() : index("index_isbn.dat"), // isbn主索引
+            nameIndex("index_name.dat"),
+            authorIndex("index_author.dat"),
+            keywordIndex("index_keyword.dat"),
+            bookCount(0) {
+        bookFile.open("books.dat", std::ios::in | std::ios::out | std::ios::binary);
+
+        if (!bookFile.is_open()) {
+            bookFile.open("books.dat",std::ios::out | std::ios::binary);
+            bookFile.close();
+            bookFile.open("books.dat",std::ios::in | std::ios::out | std::ios::binary);
+        }
+
+        bookFile.seekg(0, std::ios::end);
+        bookCount = bookFile.tellg() / sizeof(BookRecord);
+    }
 };
 
 Persistence::Persistence() {
@@ -410,3 +432,86 @@ bool Persistence::deleteUser(const std::string &userID) {
     return false;
 }
 
+void Persistence::updateBookByOffset(int offset, const BookRecord &book) {
+    impl->bookFile.seekp(offset);
+    impl->bookFile.write(reinterpret_cast<const char *>(&book),
+                         sizeof(BookRecord));
+}
+
+std::vector<int> Persistence::findByName(const std::string &name) {
+    return impl->nameIndex.find(name);
+}
+
+std::vector<int> Persistence::findByAuthor(const std::string &author) {
+    return impl->authorIndex.find(author);
+}
+
+std::vector<int> Persistence::findByKeyword(const std::string &keyword) {
+    return impl->keywordIndex.find(keyword);
+}
+
+std::vector<int> Persistence::findByISBN(const std::string &isbn) {
+    return impl->index.find(isbn);
+}
+
+bool Persistence::getBookByOffset(int offset, BookRecord &book) {
+    if (offset < 0) {
+        return false;
+    }
+
+    impl->bookFile.seekg(offset);
+    impl->bookFile.read(reinterpret_cast<char *>(&book),
+                        sizeof(BookRecord));
+    return true;
+}
+
+std::vector<int> Persistence::getAllBooks() {
+    std::vector<int> ids;
+    for (int i = 0; i < impl->bookCount; ++i) {
+        ids.push_back(i * sizeof(BookRecord));
+    }
+    return ids;
+}
+
+int Persistence::addBook(const BookRecord &book) {
+    int offset = impl->bookCount * sizeof(BookRecord);
+
+    impl->bookFile.seekp(offset);
+    impl->bookFile.write(reinterpret_cast<const char *>(&book),
+                         sizeof(BookRecord));
+
+    impl->bookCount++;
+    return offset;
+}
+
+void Persistence::insertISBN(const std::string &isbn, int offset) {
+    impl->index.insert(isbn, offset);
+}
+
+void Persistence::removeISBN(const std::string &isbn, int offset) {
+    impl->index.remove(isbn, offset);
+}
+
+void Persistence::insertName(const std::string &name, int offset) {
+    impl->nameIndex.insert(name, offset);
+}
+
+void Persistence::removeName(const std::string &name, int offset) {
+    impl->nameIndex.remove(name, offset);
+}
+
+void Persistence::insertAuthor(const std::string &author, int offset) {
+    impl->authorIndex.insert(author, offset);
+}
+
+void Persistence::removeAuthor(const std::string &author, int offset) {
+    impl->authorIndex.remove(author, offset);
+}
+
+void Persistence::insertKeyword(const std::string &keyword, int offset) {
+    impl->keywordIndex.insert(keyword, offset);
+}
+
+void Persistence::removeKeyword(const std::string &keyword, int offset) {
+    impl->keywordIndex.remove(keyword, offset);
+}

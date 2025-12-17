@@ -15,7 +15,9 @@ public:
     explicit BookManager(Persistence &db);
 
     // 查询图书，按关键字/ISBN/作者/书名
-    std::vector<int> show(const std::string &key, const std::string &field = "ISBN");
+    bool show(const std::string &field,
+              const std::string &key,
+              std::vector<BookRecord> &result);
 
     // 选中图书
     bool select(const std::string &isbn);
@@ -25,10 +27,10 @@ public:
     // fieldFlag: 0=ISBN, 1=书名, 2=作者, 3=关键字, 4=价格, 5=库存
 
     // 导入图书（增加库存）
-    bool import(int quantity, double price);
+    bool import(int quantity, double totalCost);
 
     // 购买图书
-    bool buy(int quantity);
+    bool buy(const std::string &ISBN, int quantity, double &cost);
 
     // 当前选中图书
     SelectedBook getSelected() const;
