@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include "BookManager.h"
+#include "Transaction.h"
+
 void printBook(BookRecord b) {
     std::cout << b.ISBN << '\t'
                               << b.title << '\t'
@@ -28,7 +30,7 @@ int main() {
     AccountManager am(db);{}
     BookManager bm(db);{}
     CmdParser parser;
-
+    Transaction trans(db);
     std::string line;
     while (true) {
         if (!std::getline(std::cin, line) ){
@@ -268,7 +270,7 @@ int main() {
 
             case CommandType::BUY: {
                 if (cmd.args.size() != 2) {
-                    std::cerr << "BuyCmd is too short\n";
+                    //std::cerr << "BuyCmd is too short\n";
                     std::cout << "Invalid\n";
                     break;
                 }
@@ -277,11 +279,12 @@ int main() {
                 int quantity = std::stoi(cmd.args[1]);
 
                 if (!bm.buy(cmd.args[0], quantity, cost)) {
-                    std::cerr << "Buy fail\n";
+                    //std::cerr << "Buy fail\n";
                     std::cout << "Invalid\n";
                 }
                 else {
                     std::cout << std::fixed << std::setprecision(2) << cost << '\n';
+                    trans.add(cost);
                 }
                 break;
             }
@@ -297,11 +300,31 @@ int main() {
                 double totalCost = std::stod(cmd.args[1]);
 
                 if (!bm.import(quantity, totalCost)) {
-                    std::cerr << "Import fail\n";
+                    //std::cerr << "Import fail\n";
                     std::cout << "Invalid\n";
                 }
-                std::cerr << "Import success\n";
+                trans.add(-totalCost);
+                //std::cerr << "Import success\n";
                 break;
+            }
+
+            case CommandType::SHOWFINANCE: {
+                if (cmd.args.size() > 2) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+                if (cmd.args.size() == 1) {
+                    trans.showFinanceAll();
+                    break;
+                }
+                if (cmd.args.size() == 2){
+                    int cnt = 0;
+                    for (auto c: cmd.args[1]) {
+                        cnt = cnt * 10 + c - '0';
+                    }
+                    trans.showFinance(cnt);
+                    break;
+                }
             }
 
             default:
@@ -309,6 +332,5 @@ int main() {
                 break;
         }
     }
-
     return 0;
 }

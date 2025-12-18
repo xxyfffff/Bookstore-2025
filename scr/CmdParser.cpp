@@ -4,6 +4,8 @@
 
 #include "CmdParser.h"
 
+#include <iostream>
+
 std::vector<std::string> CmdParser::tokenize(const std::string &line) {
     std::vector<std::string> res;
     std::string token;
@@ -47,8 +49,7 @@ CommandType CmdParser::determineType(const std::vector<std::string> &tokens) {
     if (cmd == "delete") return CommandType::DELETE;
     if (cmd == "passwd") return CommandType::PASSWD;
     if (cmd == "show") {
-        const std::string &cmd2 = tokens[1];
-        if (cmd2 == "finance") {
+        if (tokens.size() >= 2 && tokens[1] == "finance") {
             return CommandType::SHOWFINANCE;
         }
         return CommandType::SHOW;
@@ -98,7 +99,7 @@ bool CmdParser::validate(const std:: vector<std::string> &t, CommandType type) {
         case CommandType::BUY:
             return n == 3;
         case CommandType::SHOWFINANCE:
-            return n == 1 || n == 2;
+            return n == 2 || n == 3;
         case CommandType::LOG:
             return n == 1;
         case CommandType::REPORTFINANCE:

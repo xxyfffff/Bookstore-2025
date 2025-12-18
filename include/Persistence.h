@@ -54,6 +54,11 @@ public:
     void updateBookByOffset(int offset, const BookRecord &book);
     std::vector<int> getAllBooks();
 
+    // finance.data
+    bool addFinanceRecord(double delta);
+    bool getFinanceRecord(std::vector<FinanceRecord> & frs, int cnt);
+    bool getFinanceRecordAll(std::vector<FinanceRecord> & frs);
+
 private:
     class Impl;
     Impl *impl;

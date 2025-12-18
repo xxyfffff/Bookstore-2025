@@ -22,4 +22,6 @@ add_executable(Bookstore_2025
         scr/CmdParser.cpp
         scr/Logger.cpp
         scr/Persistence.cpp
-        scr/main.cpp)
+        scr/main.cpp
+        include/Transaction.h
+        scr/Transaction.cpp)

@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <algorithm>
+#include <iostream>
 
 #include "Types.h"
 
@@ -310,16 +311,18 @@ public:
     PieceNode nameIndex;
     PieceNode authorIndex;
     PieceNode keywordIndex;
-
     std::fstream bookFile;
-
     int bookCount;
+
+    std::fstream financeFile;
+    int financeCnt;
 
     Impl() : index("index_isbn.dat"), // isbn主索引
             nameIndex("index_name.dat"),
             authorIndex("index_author.dat"),
             keywordIndex("index_keyword.dat"),
-            bookCount(0) {
+            bookCount(0),
+            financeCnt(0){
         bookFile.open("books.dat", std::ios::in | std::ios::out | std::ios::binary);
 
         if (!bookFile.is_open()) {
@@ -330,6 +333,22 @@ public:
 
         bookFile.seekg(0, std::ios::end);
         bookCount = bookFile.tellg() / sizeof(BookRecord);
+
+        financeFile.open("finance.dat",
+            std::ios::in | std::ios::out | std::ios::binary);
+
+        if (!financeFile.is_open()) {
+            // 文件不存在，创建
+            financeFile.open("finance.dat",
+                std::ios::out | std::ios::binary);
+            financeFile.close();
+
+            financeFile.open("finance.dat",
+                std::ios::in | std::ios::out | std::ios::binary);
+        }
+
+        financeFile.seekg(0, std::ios::end);
+        financeCnt = financeFile.tellg() / sizeof(FinanceRecord);
     }
 };
 
@@ -372,8 +391,7 @@ bool Persistence::addUser(const std::string &userID,
     UserRecord tmp;
     if (getUser(userID, tmp)) return false; // 重名
 
-    std::ofstream file("users.dat",
-        std::ios::binary | std::ios::app);
+    std::ofstream file("users.dat",std::ios::binary | std::ios::app);// 二进制，追加模式
 
     user::UserDiskRecord d{};
     strncpy(d.userID, userID.c_str(), 63);
@@ -514,4 +532,59 @@ void Persistence::insertKeyword(const std::string &keyword, int offset) {
 
 void Persistence::removeKeyword(const std::string &keyword, int offset) {
     impl->keywordIndex.remove(keyword, offset);
+}
+
+bool Persistence::addFinanceRecord(double delta) {
+    FinanceRecord d;
+    d.delta = delta;
+    impl->financeFile.seekp(0, std::ios::end);
+    impl->financeFile.write(reinterpret_cast<const char*>(&d), sizeof(FinanceRecord));
+    impl->financeFile.flush();
+
+    impl->financeCnt++;
+    return true;
+}
+
+bool Persistence::getFinanceRecord(std::vector<FinanceRecord> & frs, int cnt) {
+    frs.clear();
+    if (impl->financeCnt == 0) {
+        return true;
+    }
+
+    int readCnt;
+    if (cnt < 0 || cnt > impl->financeCnt) {
+        return false;
+    } else {
+        readCnt = cnt;
+    }
+
+    int start = impl->financeCnt - readCnt;
+
+    impl->financeFile.seekg(start * sizeof(FinanceRecord),
+                            std::ios::beg);
+
+    for (int i = 0; i < readCnt; ++i) {
+        FinanceRecord fr;
+        impl->financeFile.read(reinterpret_cast<char*>(&fr),
+                                sizeof(FinanceRecord));
+        frs.push_back(fr);
+    }
+
+    return true;
+}
+
+bool Persistence::getFinanceRecordAll(std::vector<FinanceRecord> & frs) {
+    frs.clear();
+
+    std::ifstream file("finance.dat", std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    FinanceRecord rec;
+    while (file.read(reinterpret_cast<char*>(&rec), sizeof(FinanceRecord))) {
+        frs.push_back(rec);
+    }
+
+    return true;
 }
