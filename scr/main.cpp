@@ -68,6 +68,7 @@ int main() {
                 }
                 if (cmd.args.size() == 1) {
                     if (am.su(cmd.args[0])) {
+                        bm.resetSelected();
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
@@ -76,6 +77,7 @@ int main() {
                 }
                 if (cmd.args.size() == 2) {
                     if (am.login(cmd.args[0], cmd.args[1])) {
+                        bm.resetSelected();
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
@@ -87,6 +89,7 @@ int main() {
 
             case CommandType::LOGOUT: {
                 if (am.logout()) {
+                    bm.resetSelected();
                     //std::cout << "Logged out\n";
                 } else {
                     std::cout << "Invalid\n";
@@ -125,7 +128,7 @@ int main() {
 
             case CommandType::PASSWD: {
                 if (cmd.args.size() < 2) {
-                    //std::cout << "Invalid\n";
+                    std::cout << "Invalid\n";
                     break;
                 }
                 if (cmd.args.size() == 2) {
@@ -147,6 +150,10 @@ int main() {
 
                 /* ================= 图书相关 ================= */
             case CommandType::SELECT: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 if (cmd.args.size() != 1) {
                     //std::cerr << "SelectCmd is too short\n";
                     std::cout << "Invalid\n";
@@ -163,6 +170,10 @@ int main() {
             }
 
             case CommandType::MODIFY: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 if (cmd.args.empty()) {
                     //std::cerr << "ModifyCmd is too short\n";
                     std::cout << "Invalid\n";
@@ -210,6 +221,10 @@ int main() {
             }
 
             case CommandType::SHOW: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 1) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 std::vector<BookRecord> result;
 
                 if (cmd.args.empty()) {
@@ -269,6 +284,10 @@ int main() {
             }
 
             case CommandType::BUY: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 1) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 if (cmd.args.size() != 2) {
                     //std::cerr << "BuyCmd is too short\n";
                     std::cout << "Invalid\n";
@@ -289,7 +308,11 @@ int main() {
                 break;
             }
 
-            case CommandType::IMPORT: {
+            case CommandType::IMPORT:
+                {if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
+                std::cout << "Invalid\n";
+                break;
+                }
                 if (cmd.args.size() != 2) {
                     //std::cerr << "ImportCmd is too short\n";
                     std::cout << "Invalid\n";
@@ -302,13 +325,18 @@ int main() {
                 if (!bm.import(quantity, totalCost)) {
                     //std::cerr << "Import fail\n";
                     std::cout << "Invalid\n";
+                    break;
                 }
                 trans.add(-totalCost);
                 //std::cerr << "Import success\n";
                 break;
             }
-
+                /* ================= 日志相关 ================= */
             case CommandType::SHOWFINANCE: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 7) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 if (cmd.args.size() > 2) {
                     std::cout << "Invalid\n";
                     break;

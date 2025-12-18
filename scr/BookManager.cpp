@@ -157,7 +157,17 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
 
     // 1. 修改字段
     switch (fieldFlag) {
-        case 0: strcpy(newBook.ISBN, newValue.c_str()); break;
+        case 0: {
+            if (newBook.ISBN == newValue) {
+                return false;
+            }
+            std::vector<int> tmp = db.findByISBN(newValue);
+            if (!tmp.empty()) {
+                return false;
+            }
+            strcpy(newBook.ISBN, newValue.c_str());
+            break;
+        }
         case 1: strcpy(newBook.title, newValue.c_str()); break;
         case 2: strcpy(newBook.author, newValue.c_str()); break;
         case 3: strcpy(newBook.keyword_list, newValue.c_str()); break;
@@ -280,6 +290,7 @@ std::vector<std::string> BookManager::parseKeywords(const std::string &keywords)
     return res;
 }
 
-SelectedBook BookManager::getSelected() const {
-    return current;
+void BookManager::resetSelected() {
+    current.hasSelect = false;
+    current.offset = -1;
 }

@@ -35,18 +35,6 @@ struct SelectedBook {
     int offset = -1;
 };
 
-// 倒排索引项：key -> ISBN
-struct IndexEntry {
-    char key[64];
-    char ISBN[20];
-};
-
-// ISBN 主索引：ISBN -> file offset
-struct ISBNIndex {
-    char ISBN[20];
-    long long offset;         // books.dat 偏移
-};
-
 struct FinanceRecord {
     double delta;             // +收入 / -支出
 };

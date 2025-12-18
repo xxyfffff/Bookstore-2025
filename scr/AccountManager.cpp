@@ -2,9 +2,7 @@
 // Created by yifei on 12/12/2025.
 //
 #include "AccountManager.h"
-
 #include <iostream>
-
 #include "Persistence.h"
 AccountManager::AccountManager(Persistence &db) : db(db) {}
 
@@ -37,9 +35,11 @@ bool AccountManager::login(const std::string &userID,
                            const std::string &password) {
     UserRecord user;
     if (!db.getUser(userID, user)) {
+        //std::cerr << "user not exist\n";
         return false;
     }
     if (user.password != password) {
+        //std::cerr << "wrong password\n";
         return false;
     }
     loginStack.push_back({user});
@@ -74,11 +74,9 @@ bool AccountManager::changePassword(const std::string &userID,
     if (!db.getUser(userID, user)) {
         return false;
     }
-
-    bool isSelf = (isLoggedIn() && currentUserID() == userID);
     bool isAdmin = (currentPrivilege() == 7);
 
-    if (!isSelf && !isAdmin) {
+    if (oldPwd.empty() && !isAdmin) {
         return false;
     }
     if (!isAdmin && user.password != oldPwd) {

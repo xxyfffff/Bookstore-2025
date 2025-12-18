@@ -12,8 +12,8 @@
 namespace user{
 
     struct UserDiskRecord {
-        char userID[30];
-        char password[30];
+        char userID[64];
+        char password[64];
         int privilege;
         bool valid;
     };

@@ -32,8 +32,8 @@ public:
     // 购买图书
     bool buy(const std::string &ISBN, int quantity, double &cost);
 
-    // 当前选中图书
-    SelectedBook getSelected() const;
+    // 重置选中图书
+    void resetSelected();
 
 private:
     Persistence &db;
