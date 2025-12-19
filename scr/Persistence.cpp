@@ -303,6 +303,30 @@ public:
             cnt = now.getNext();
         }
     }
+
+    void debug_dump(const std::string &tag) {
+        std::cerr << "=== Dump index: " << tag << " ===\n";
+        int cnt = head;
+        Node now;
+        int node_id = 0;
+        while (cnt != -1) {
+            nodeRiver.read(now, cnt);
+            std::cerr << "Node " << node_id++
+                      << " at " << cnt
+                      << ", size=" << now.getSize()
+                      << ", next=" << now.getNext() << "\n";
+            for (int i = 0; i < now.getSize(); ++i) {
+                auto l = now.getData(i);
+                std::cerr << "  [" << i << "] "
+                          << l.getIndex()
+                          << " -> "
+                          << l.getValue()
+                          << "\n";
+            }
+            cnt = now.getNext();
+        }
+        std::cerr << "=== End dump ===\n";
+    }
 };
 
 class Persistence::Impl {
@@ -354,6 +378,14 @@ public:
 
 Persistence::Persistence() {
     impl = new Impl();
+
+    impl->bookFile.clear();
+    impl->bookFile.seekg(0, std::ios::beg);
+    impl->bookFile.seekp(0, std::ios::end);
+
+    impl->financeFile.clear();
+    impl->financeFile.seekg(0, std::ios::beg);
+    impl->financeFile.seekp(0, std::ios::end);
 }
 
 void Persistence::insert(const std::string &key, int id) {
@@ -454,6 +486,7 @@ void Persistence::updateBookByOffset(int offset, const BookRecord &book) {
     impl->bookFile.seekp(offset);
     impl->bookFile.write(reinterpret_cast<const char *>(&book),
                          sizeof(BookRecord));
+    impl->bookFile.flush();
 }
 
 std::vector<int> Persistence::findByName(const std::string &name) {
@@ -587,4 +620,8 @@ bool Persistence::getFinanceRecordAll(std::vector<FinanceRecord> & frs) {
     }
 
     return true;
+}
+
+void Persistence::debugDumpKeyword(const std::string &tag) {
+    impl->keywordIndex.debug_dump("keyword");
 }

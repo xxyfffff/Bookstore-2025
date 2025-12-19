@@ -59,6 +59,7 @@ public:
     bool getFinanceRecord(std::vector<FinanceRecord> & frs, int cnt);
     bool getFinanceRecordAll(std::vector<FinanceRecord> & frs);
 
+    void debugDumpKeyword(const std::string &tag);
 private:
     class Impl;
     Impl *impl;

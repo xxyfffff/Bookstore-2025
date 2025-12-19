@@ -92,6 +92,7 @@ bool BookManager::show(const std::string &field,
             return false; // 非法字段
         }
     }
+    //db.debugDumpKeyword("before show keyword");
     for (auto id : ids) {
         BookRecord book;
         if (db.getBookByOffset(id, book)) {
@@ -182,11 +183,12 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
         db.removeName(oldBook.title, current.offset);
     if (strlen(oldBook.author))
         db.removeAuthor(oldBook.author, current.offset);
-
-    std::vector<std::string> Keywords = parseKeywords(newValue);
-    for (auto kw: Keywords) {
-        if (!kw.empty()) {
-            db.removeKeyword(kw.c_str(), current.offset);
+    if (strlen(oldBook.keyword_list)) {
+        std::vector<std::string> Keywords = parseKeywords(oldBook.keyword_list);
+        for (auto kw: Keywords) {
+            if (!kw.empty()) {
+                db.removeKeyword(kw.c_str(), current.offset);
+            }
         }
     }
 
@@ -199,10 +201,10 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
         db.insertName(newBook.title, current.offset);
     if (strlen(newBook.author))
         db.insertAuthor(newBook.author, current.offset);
-    for (auto kw: Keywords) {
-        if (!kw.empty()) {
-            db.insertKeyword(kw.c_str(), current.offset);
-        }
+    if (strlen(newBook.keyword_list)) {
+        auto newKeywords = parseKeywords(newBook.keyword_list);
+        for (auto &kw : newKeywords)
+            db.insertKeyword(kw, current.offset);
     }
 
     /* 调试

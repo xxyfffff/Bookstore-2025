@@ -295,7 +295,20 @@ int main() {
                 }
 
                 double cost = 0;
+                try {
+                    int quantity = std::stoi(cmd.args[1]);
+                } catch (const std::invalid_argument&) {
+                    std::cout << "Invalid\n";
+                    break;
+                } catch (const std::out_of_range&) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
                 int quantity = std::stoi(cmd.args[1]);
+                if (quantity < 0) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
 
                 if (!bm.buy(cmd.args[0], quantity, cost)) {
                     //std::cerr << "Buy fail\n";
