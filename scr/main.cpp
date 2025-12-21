@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <iomanip>
 #include "Persistence.h"
 #include "CmdParser.h"
@@ -6,7 +7,6 @@
 #include <string>
 #include "BookManager.h"
 #include "Transaction.h"
-
 void printBook(BookRecord b) {
     std::cout << b.ISBN << '\t'
                               << b.title << '\t'
@@ -181,16 +181,13 @@ int main() {
 
                 bool ok = true;
                 for (auto &arg : cmd.args) {
-                    // arg 形如 -ISBN=xxx / -name=xxx ...
                     if (arg.size() < 2 || arg[0] != '-') {
-                        //std::cerr << "ModifyCmd is invalid\n";
                         ok = false;
                         break;
                     }
 
                     auto pos = arg.find('=');
                     if (pos == std::string::npos) {
-                       // std::cerr << "Cannot find =\n";
                         ok = false;
                         break;
                     }
@@ -206,8 +203,34 @@ int main() {
                     else if (field == "price") flag = 4;
                     else if (field == "stock") flag = 5;
 
+                    if (flag == 4) { // price
+                        try {
+                            size_t idx = 0;
+                            double val = std::stod(value, &idx);
+                            if (idx != value.size() || val < 0) {
+                                ok = false;
+                                break;
+                            }
+                        } catch (...) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    else if (flag == 5) { // stock
+                        try {
+                            size_t idx = 0;
+                            long long val = std::stoll(value, &idx);
+                            if (idx != value.size() || val < 0 || val > INT32_MAX) {
+                                ok = false;
+                                break;
+                            }
+                        } catch (...) {
+                            ok = false;
+                            break;
+                        }
+                    }
+
                     if (flag == -1 || !bm.modify(flag, value)) {
-                        //std::cerr << "Field is invalid\n";
                         ok = false;
                         break;
                     }
@@ -288,61 +311,72 @@ int main() {
                     break;
                 }
                 if (cmd.args.size() != 2) {
-                    //std::cerr << "BuyCmd is too short\n";
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                int quantity = 0;
+                try {
+                    size_t idx = 0;
+                    long long tmp = std::stoll(cmd.args[1], &idx); // 用 long long 防止溢出
+                    if (idx != cmd.args[1].size() || tmp <= 0 || tmp > INT32_MAX) {
+                        std::cout << "Invalid\n";
+                        break;
+                    }
+                    quantity = static_cast<int>(tmp);
+                } catch (...) {
                     std::cout << "Invalid\n";
                     break;
                 }
 
                 double cost = 0;
-                try {
-                    int quantity = std::stoi(cmd.args[1]);
-                } catch (const std::invalid_argument&) {
-                    std::cout << "Invalid\n";
-                    break;
-                } catch (const std::out_of_range&) {
-                    std::cout << "Invalid\n";
-                    break;
-                }
-                int quantity = std::stoi(cmd.args[1]);
-                if (quantity < 0) {
-                    std::cout << "Invalid\n";
-                    break;
-                }
-
                 if (!bm.buy(cmd.args[0], quantity, cost)) {
-                    //std::cerr << "Buy fail\n";
                     std::cout << "Invalid\n";
-                }
-                else {
+                } else {
                     std::cout << std::fixed << std::setprecision(2) << cost << '\n';
                     trans.add(cost);
                 }
                 break;
             }
 
-            case CommandType::IMPORT:
-                {if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
-                std::cout << "Invalid\n";
-                break;
+            case CommandType::IMPORT: {
+                if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
+                    std::cout << "Invalid\n";
+                    break;
                 }
                 if (cmd.args.size() != 2) {
-                    //std::cerr << "ImportCmd is too short\n";
                     std::cout << "Invalid\n";
                     break;
                 }
 
-                int quantity = std::stoi(cmd.args[0]);
-                double totalCost = std::stod(cmd.args[1]);
+                int quantity = 0;
+                double totalCost = 0;
+
+                try {
+                    size_t idx1 = 0, idx2 = 0;
+
+                    long long tmpQty = std::stoll(cmd.args[0], &idx1);
+                    totalCost = std::stod(cmd.args[1], &idx2);
+
+                    if (idx1 != cmd.args[0].size() || idx2 != cmd.args[1].size() || tmpQty <= 0 || tmpQty > INT32_MAX || totalCost < 0) {
+                        std::cout << "Invalid\n";
+                        break;
+                    }
+
+                    quantity = static_cast<int>(tmpQty);
+                } catch (...) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
 
                 if (!bm.import(quantity, totalCost)) {
-                    //std::cerr << "Import fail\n";
                     std::cout << "Invalid\n";
                     break;
                 }
                 trans.add(-totalCost);
-                //std::cerr << "Import success\n";
                 break;
             }
+
                 /* ================= 日志相关 ================= */
             case CommandType::SHOWFINANCE: {
                 if (!am.isLoggedIn() || am.currentPrivilege() < 7) {

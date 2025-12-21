@@ -7,7 +7,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
-
+#include <unordered_set>
 
 void print(BookRecord b) {
     std::cout << b.ISBN << '\t'
@@ -176,7 +176,28 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
         }
         case 1: strcpy(newBook.title, newValue.c_str()); break;
         case 2: strcpy(newBook.author, newValue.c_str()); break;
-        case 3: strcpy(newBook.keyword_list, newValue.c_str()); break;
+        case 3: {
+            // 先解析新的关键字
+            auto keywords = parseKeywords(newValue);
+
+            // 检查是否有重复
+            std::unordered_set<std::string> seen;
+            for (auto &kw : keywords) {
+                if (seen.count(kw)) {
+                    return false; // 重复关键字，操作失败
+                }
+                seen.insert(kw);
+            }
+
+            // 检查每个关键字是否合法（可选）
+            for (auto &kw : keywords) {
+                if (kw.empty()) return false; // 空关键字非法
+            }
+
+            // 如果通过检查，拷贝到 book
+            std::strncpy(newBook.keyword_list, newValue.c_str(), sizeof(newBook.keyword_list) - 1);
+            break;
+        }
         case 4: newBook.price = std::stod(newValue); break;
         case 5: newBook.stock = std::stoi(newValue); break;
         default: return false;
