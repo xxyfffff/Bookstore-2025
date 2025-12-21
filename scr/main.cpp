@@ -28,7 +28,7 @@ int main() {
     }
 
     AccountManager am(db);{}
-    BookManager bm(db);{}
+    BookManager bm(db, am);{}
     CmdParser parser;
     Transaction trans(db);
     std::string line;
@@ -89,7 +89,6 @@ int main() {
 
             case CommandType::LOGOUT: {
                 if (am.logout()) {
-                    bm.resetSelected();
                     //std::cout << "Logged out\n";
                 } else {
                     std::cout << "Invalid\n";

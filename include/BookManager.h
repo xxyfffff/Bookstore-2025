@@ -7,12 +7,14 @@
 
 #include <string>
 #include <vector>
+
+#include "AccountManager.h"
 #include "Persistence.h"
 #include "Types.h"
 
 class BookManager {
 public:
-    explicit BookManager(Persistence &db);
+    explicit BookManager(Persistence &db, AccountManager &account);
 
     // 查询图书，按关键字/ISBN/作者/书名
     bool show(const std::string &field,
@@ -37,7 +39,9 @@ public:
 
 private:
     Persistence &db;
-    SelectedBook current;
+    AccountManager &account;
+    AccountSession* curSession();
+
     std::vector<std::string> parseKeywords(const std::string &keywords);
 };
 

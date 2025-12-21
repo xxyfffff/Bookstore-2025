@@ -12,9 +12,16 @@ struct UserRecord {
     int privilege; // visitor = 0, customer = 1, clerk = 3, admin = 7
 };
 
+// 某用户当前选中的书籍
+struct SelectedBook {
+    bool hasSelect;           // 是否已选书
+    int offset = -1;
+};
+
 // 登录栈单元
 struct AccountSession {
     UserRecord user;
+    SelectedBook book;
 };
 
 // 图书信息
@@ -28,12 +35,6 @@ struct BookRecord {
     double price = 0;
 };
 #pragma pack(pop)
-
-// 某用户当前选中的书籍
-struct SelectedBook {
-    bool hasSelect;           // 是否已选书
-    int offset = -1;
-};
 
 struct FinanceRecord {
     double delta;             // +收入 / -支出

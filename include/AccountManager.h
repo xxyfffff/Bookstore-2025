@@ -12,6 +12,7 @@
 
 class AccountManager {
 public:
+    AccountSession* currentSession();
     explicit AccountManager(Persistence &persistence);
 
     bool registerUser(const std::string &userID,

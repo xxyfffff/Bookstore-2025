@@ -7,6 +7,8 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+
+
 void print(BookRecord b) {
     std::cout << b.ISBN << '\t'
                               << b.title << '\t'
@@ -15,10 +17,12 @@ void print(BookRecord b) {
                               << std::fixed << std::setprecision(2) << b.price << '\t'
                               << b.stock << '\n';
 }
-
-BookManager::BookManager(Persistence &db): db(db) {
-    current.hasSelect = false;
+AccountSession* BookManager::curSession() {
+    return account.currentSession();
 }
+
+BookManager::BookManager(Persistence &db, AccountManager &account)
+    : db(db), account(account) {}
 
 bool BookManager::show(const std::string &field,
                        const std::string &key,
@@ -112,12 +116,14 @@ bool BookManager::select(const std::string &ISBN) {
     if (ISBN.empty()) {
         return false;
     }
+    auto *session = account.currentSession();
+    if (!session) return false;
 
     std::vector<int> ids = db.findByISBN(ISBN);
 
     if (!ids.empty()) {
-        current.hasSelect = true;
-        current.offset = ids[0];
+        session->book.hasSelect = true;
+        session->book.offset = ids[0];
         //std::cerr << "Selected book exist\n";
         return true;
     }
@@ -126,15 +132,15 @@ bool BookManager::select(const std::string &ISBN) {
     }
 
     BookRecord book;
-    strncpy(book.ISBN, ISBN.c_str(), sizeof(book.ISBN));
+    memset(&book, 0, sizeof(BookRecord));
+    strncpy(book.ISBN, ISBN.c_str(), sizeof(book.ISBN) - 1);
 
     int offset = db.addBook(book);
     if (offset < 0) return false;
     db.insertISBN(ISBN, offset);
-
-    current.hasSelect = true;
-    current.offset = offset;
-    db.updateBookByOffset(current.offset, book);
+    db.updateBookByOffset(offset, book);
+    session->book.hasSelect = true;
+    session->book.offset = offset;
 
     /* 调试
     BookRecord newbook;
@@ -147,26 +153,25 @@ bool BookManager::select(const std::string &ISBN) {
 }
 
 bool BookManager::modify(int fieldFlag, const std::string &newValue) {
-    if (!current.hasSelect || current.offset < 0) {
-        return false;
-    }
+    auto *s = account.currentSession();
+    if (!s || !s->book.hasSelect || s->book.offset < 0) return false;
 
     BookRecord oldBook;
-    if (!db.getBookByOffset(current.offset, oldBook)) return false;
+    if (!db.getBookByOffset(s->book.offset, oldBook)) return false;
 
     BookRecord newBook = oldBook;
 
     // 1. 修改字段
     switch (fieldFlag) {
         case 0: {
-            if (newBook.ISBN == newValue) {
+            if (std::strcmp(newBook.ISBN, newValue.c_str()) == 0) {
                 return false;
             }
-            std::vector<int> tmp = db.findByISBN(newValue);
+            auto tmp = db.findByISBN(newValue);
             if (!tmp.empty()) {
                 return false;
             }
-            strcpy(newBook.ISBN, newValue.c_str());
+            std::strncpy(newBook.ISBN, newValue.c_str(), sizeof(newBook.ISBN) - 1);
             break;
         }
         case 1: strcpy(newBook.title, newValue.c_str()); break;
@@ -178,33 +183,33 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
     }
 
     // 2. 先删除旧索引
-    db.removeISBN(oldBook.ISBN, current.offset);
+    db.removeISBN(oldBook.ISBN, s->book.offset);
     if (strlen(oldBook.title))
-        db.removeName(oldBook.title, current.offset);
+        db.removeName(oldBook.title, s->book.offset);
     if (strlen(oldBook.author))
-        db.removeAuthor(oldBook.author, current.offset);
+        db.removeAuthor(oldBook.author, s->book.offset);
     if (strlen(oldBook.keyword_list)) {
         std::vector<std::string> Keywords = parseKeywords(oldBook.keyword_list);
         for (auto kw: Keywords) {
             if (!kw.empty()) {
-                db.removeKeyword(kw.c_str(), current.offset);
+                db.removeKeyword(kw.c_str(), s->book.offset);
             }
         }
     }
 
     // 3. 更新 book 本体
-    db.updateBookByOffset(current.offset, newBook);
+    db.updateBookByOffset(s->book.offset, newBook);
 
     // 4. 插入新索引
-    db.insertISBN(newBook.ISBN, current.offset);
+    db.insertISBN(newBook.ISBN, s->book.offset);
     if (strlen(newBook.title))
-        db.insertName(newBook.title, current.offset);
+        db.insertName(newBook.title, s->book.offset);
     if (strlen(newBook.author))
-        db.insertAuthor(newBook.author, current.offset);
+        db.insertAuthor(newBook.author, s->book.offset);
     if (strlen(newBook.keyword_list)) {
         auto newKeywords = parseKeywords(newBook.keyword_list);
         for (auto &kw : newKeywords)
-            db.insertKeyword(kw, current.offset);
+            db.insertKeyword(kw, s->book.offset);
     }
 
     /* 调试
@@ -218,23 +223,24 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
 }
 
 bool BookManager::import(int quantity, double totalCost) {
-    if (!current.hasSelect) {
+    auto *s = account.currentSession();
+    if (!s || !s->book.hasSelect) return false;
+
+    if (!s->book.hasSelect) {
         return false;
     }
     if (quantity <= 0 || totalCost < 0) {
         return false;
     }
-    if (current.offset < 0) {
+    if (s->book.offset < 0) {
         return false;
     }
 
     BookRecord book;
-    if (!db.getBookByOffset(current.offset, book)) {
-        return false;
-    }
+    if (!db.getBookByOffset(s->book.offset, book)) return false;
 
     book.stock += quantity;
-    db.updateBookByOffset(current.offset, book);
+    db.updateBookByOffset(s->book.offset, book);
     /* 调试
     BookRecord newbook;
     if (db.getBookByOffset(current.offset, newbook)) {
@@ -261,7 +267,6 @@ bool BookManager::buy(const std::string &ISBN, int quantity, double &cost) {
     if (!db.getBookByOffset(offset, book)) {
         return false;
     }
-
     if (book.stock < quantity) {
         return false;  // 库存不足
     }
@@ -293,6 +298,8 @@ std::vector<std::string> BookManager::parseKeywords(const std::string &keywords)
 }
 
 void BookManager::resetSelected() {
-    current.hasSelect = false;
-    current.offset = -1;
+    auto *s = curSession();
+    if (!s) return;
+    s->book.hasSelect = false;
+    s->book.offset = -1;
 }

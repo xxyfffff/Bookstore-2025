@@ -4,6 +4,11 @@
 #include "AccountManager.h"
 #include <iostream>
 #include "Persistence.h"
+AccountSession* AccountManager::currentSession() {
+    if (loginStack.empty()) return nullptr;
+    return &loginStack.back();
+}
+
 AccountManager::AccountManager(Persistence &db) : db(db) {}
 
 bool AccountManager::isLoggedIn() const {
@@ -42,21 +47,35 @@ bool AccountManager::login(const std::string &userID,
         //std::cerr << "wrong password\n";
         return false;
     }
-    loginStack.push_back({user});
+
+    AccountSession s;
+    s.user = user;
+    s.book.hasSelect = false;
+    s.book.offset = -1;
+    loginStack.push_back(s);
     return true;
 }
 
 bool AccountManager::su(const std::string &targetUserID) {
+    if (loginStack.empty()) return false;
+
     UserRecord target;
-    if (target.privilege < currentPrivilege()) {
-        loginStack.push_back({target});
-        return true;
-    }
     if (!db.getUser(targetUserID, target)) {
         return false;
     }
-    loginStack.push_back({target});
+
+    // 只能向下 su
+    if (target.privilege >= currentPrivilege()) {
+        return false;
+    }
+
+    AccountSession s;
+    s.user = target;
+    s.book.hasSelect = false;
+
+    loginStack.push_back(s);
     return true;
+
 }
 
 bool AccountManager::logout() {
