@@ -37,6 +37,17 @@ int main() {
             break;
         }
 
+        bool onlySpace = true;
+        for (char c : line) {
+            if (!isspace(static_cast<unsigned char>(c))) {
+                onlySpace = false;
+                break;
+            }
+        }
+        if (onlySpace) {
+            continue;
+        }
+
         ParsedCommand cmd = parser.parseLine(line);
 
         switch (cmd.type) {
