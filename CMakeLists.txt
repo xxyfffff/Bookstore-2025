@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 3.28)
 project(code CXX)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 include_directories(.)
 include_directories(include)
 
-add_executable(Bookstore_2025
+add_executable(code
         include/Types.h
         include/Utils.h
         include/Utils.h
@@ -15,13 +16,13 @@ add_executable(Bookstore_2025
         include/BookManager.h
         include/Logger.h
         include/Persistence.h
-        scr/Persistence.cpp
-        scr/Utils.cpp
-        scr/AccountManager.cpp
-        scr/BookManager.cpp
-        scr/CmdParser.cpp
-        scr/Logger.cpp
-        scr/Persistence.cpp
-        scr/main.cpp
+        src/Persistence.cpp
+        src/Utils.cpp
+        src/AccountManager.cpp
+        src/BookManager.cpp
+        src/CmdParser.cpp
+        src/Logger.cpp
+        src/Persistence.cpp
+        src/main.cpp
         include/Transaction.h
-        scr/Transaction.cpp)
+        src/Transaction.cpp)
