@@ -4,6 +4,7 @@
 #include "CmdParser.h"
 #include "AccountManager.h"
 #include <iostream>
+#include <set>
 #include <string>
 #include "BookManager.h"
 #include "Transaction.h"
@@ -58,7 +59,7 @@ int main() {
 
                 /* ================= 帐户相关 ================= */
             case CommandType::REGISTER: {
-                if (cmd.args.size() < 2) {
+                if (cmd.args.size() != 3) {
                     std::cout << "Invalid\n";
                     break;
                 }
@@ -108,23 +109,43 @@ int main() {
             }
 
             case CommandType::USERADD: {
-                if (cmd.args.size() < 3) {
+                if (cmd.args.size() != 4) {
                     std::cout << "Invalid\n";
                     break;
                 }
+
                 std::string id = cmd.args[0];
                 std::string pwd = cmd.args[1];
-                int priv = std::stoi(cmd.args[2]);
-                if (am.addUser(id, pwd, priv)) {
-                    //std::cout << "Success\n";
-                } else {
+                std::string privStr = cmd.args[2];
+
+                int priv = 0;
+                try {
+                    size_t idx = 0;
+                    long long tmp = std::stoll(privStr, &idx);
+                    if (idx != privStr.size() || tmp < 0 || tmp > 7) {
+                        std::cout << "Invalid\n";
+                        break;
+                    }
+                    priv = static_cast<int>(tmp);
+                } catch (...) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                // 权限只能是 1 / 3 / 7
+                if (!(priv == 1 || priv == 3 || priv == 7)) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                if (!am.addUser(id, pwd, priv)) {
                     std::cout << "Invalid\n";
                 }
                 break;
             }
 
             case CommandType::DELETE: {
-                if (cmd.args.size() < 1) {
+                if (cmd.args.size() != 1) {
                     std::cout << "Invalid\n";
                     break;
                 }
@@ -137,7 +158,7 @@ int main() {
             }
 
             case CommandType::PASSWD: {
-                if (cmd.args.size() < 2) {
+                if (cmd.args.size() != 2 && cmd.args.size() != 3) {
                     std::cout << "Invalid\n";
                     break;
                 }
@@ -185,13 +206,14 @@ int main() {
                     break;
                 }
                 if (cmd.args.empty()) {
-                    //std::cerr << "ModifyCmd is too short\n";
                     std::cout << "Invalid\n";
                     break;
                 }
 
+                std::set<int> usedFlags;
                 bool ok = true;
-                for (auto &arg : cmd.args) {
+
+                for (auto &arg: cmd.args) {
                     if (arg.size() < 2 || arg[0] != '-') {
                         ok = false;
                         break;
@@ -213,12 +235,24 @@ int main() {
                     else if (field == "keyword") flag = 3;
                     else if (field == "price") flag = 4;
                     else if (field == "stock") flag = 5;
+                    else {
+                        ok = false;
+                        break;
+                    }
 
-                    if (flag == 4) { // price
+                    // 重复字段
+                    if (usedFlags.count(flag)) {
+                        ok = false;
+                        break;
+                    }
+                    usedFlags.insert(flag);
+
+                    // price
+                    if (flag == 4) {
                         try {
                             size_t idx = 0;
-                            double val = std::stod(value, &idx);
-                            if (idx != value.size() || val < 0) {
+                            double v = std::stod(value, &idx);
+                            if (idx != value.size() || v < 0) {
                                 ok = false;
                                 break;
                             }
@@ -227,11 +261,13 @@ int main() {
                             break;
                         }
                     }
-                    else if (flag == 5) { // stock
+
+                    // stock
+                    if (flag == 5) {
                         try {
                             size_t idx = 0;
-                            long long val = std::stoll(value, &idx);
-                            if (idx != value.size() || val < 0 || val > INT32_MAX) {
+                            long long v = std::stoll(value, &idx);
+                            if (idx != value.size() || v < 0 || v > INT32_MAX) {
                                 ok = false;
                                 break;
                             }
@@ -241,7 +277,7 @@ int main() {
                         }
                     }
 
-                    if (flag == -1 || !bm.modify(flag, value)) {
+                    if (!bm.modify(flag, value)) {
                         ok = false;
                         break;
                     }
@@ -263,14 +299,12 @@ int main() {
                 if (cmd.args.empty()) {
                     if (bm.show("", "", result)) {
                         //std::cerr << "ShowAll success\n";
-                    }
-                    else {
+                    } else {
                         //std::cerr << "ShowAll fail\n";
                         std::cout << "Invalid\n";
                         break;
                     }
-                }
-                else if (cmd.args.size() == 1) {
+                } else if (cmd.args.size() == 1) {
                     auto &arg = cmd.args[0];
                     if (arg.size() < 2 || arg[0] != '-') {
                         ///std::cerr << "ShowCmd is invalid";
@@ -287,25 +321,36 @@ int main() {
 
                     std::string field = arg.substr(1, pos - 1);
                     std::string key = arg.substr(pos + 1);
+
+                    if (field == "keyword") {
+                        if (key.find('|') != std::string::npos) {
+                            std::cout << "Invalid\n";
+                            break;
+                        }
+                    }
                     //std::cerr << "to show:" << field << " " << key << std::endl;
-                    if (!bm.show(field == "name" ? "NAME" :
-                                 field == "author" ? "AUTHOR" :
-                                 field == "keyword" ? "KEYWORD" :
-                                 field == "ISBN" ? "ISBN" : "",
+                    if (!bm.show(field == "name"
+                                     ? "NAME"
+                                     : field == "author"
+                                           ? "AUTHOR"
+                                           : field == "keyword"
+                                                 ? "KEYWORD"
+                                                 : field == "ISBN"
+                                                       ? "ISBN"
+                                                       : "",
                                  key, result)) {
                         //std::cerr << "Show fail\n";
                         std::cout << "Invalid\n";
                         break;
-                                 }
+                    }
                     //std::cerr << "Show success\n";
-                }
-                else {
+                } else {
                     //std::cerr << "ShowCmd is too long";
                     std::cout << "Invalid\n";
                     break;
                 }
 
-                for (auto &b : result) {
+                for (auto &b: result) {
                     printBook(b);
                 }
 
@@ -404,8 +449,17 @@ int main() {
                 }
                 if (cmd.args.size() == 2){
                     int cnt = 0;
-                    for (auto c: cmd.args[1]) {
-                        cnt = cnt * 10 + c - '0';
+                    try {
+                        size_t idx = 0;
+                        long long tmp = std::stoll(cmd.args[1], &idx);
+                        if (idx != cmd.args[1].size() || tmp < 0 || tmp > INT32_MAX) {
+                            std::cout << "Invalid\n";
+                            break;
+                        }
+                        cnt = static_cast<int>(tmp);
+                    } catch (...) {
+                        std::cout << "Invalid\n";
+                        break;
                     }
                     trans.showFinance(cnt);
                     break;

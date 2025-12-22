@@ -131,7 +131,7 @@ bool BookManager::select(const std::string &ISBN) {
         //std::cerr << "book doesn't exist\n";
     }
 
-    BookRecord book;
+    BookRecord book{};
     memset(&book, 0, sizeof(BookRecord));
     strncpy(book.ISBN, ISBN.c_str(), sizeof(book.ISBN) - 1);
 
