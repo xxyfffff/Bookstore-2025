@@ -4,6 +4,7 @@
 
 #include "BookManager.h"
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -80,6 +81,8 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "KEYWORD") {
+            if (key.empty()) return false;
+            if (key.find('|') != std::string::npos) return false;
             ids = db.findByKeyword(key);
             /* 调试
             for (auto id : ids) {
@@ -177,6 +180,9 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
         case 1: strcpy(newBook.title, newValue.c_str()); break;
         case 2: strcpy(newBook.author, newValue.c_str()); break;
         case 3: {
+            if (newValue.empty()) return false;
+            if (newValue.front() == '|' || newValue.back() == '|') return false;
+
             // 先解析新的关键字
             auto keywords = parseKeywords(newValue);
 
@@ -198,8 +204,28 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
             std::strncpy(newBook.keyword_list, newValue.c_str(), sizeof(newBook.keyword_list) - 1);
             break;
         }
-        case 4: newBook.price = std::stod(newValue); break;
-        case 5: newBook.stock = std::stoi(newValue); break;
+        case 4: {
+    try {
+        size_t idx = 0;
+        double v = std::stod(newValue, &idx);
+        if (idx != newValue.size() || v < 0) return false;
+        newBook.price = v;
+    } catch (...) {
+        return false;
+    }
+    break;
+}
+case 5: {
+    try {
+        size_t idx = 0;
+        long long v = std::stoll(newValue, &idx);
+        if (idx != newValue.size() || v < 0 || v > INT32_MAX) return false;
+        newBook.stock = static_cast<int>(v);
+    } catch (...) {
+        return false;
+    }
+    break;
+}
         default: return false;
     }
 

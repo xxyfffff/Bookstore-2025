@@ -110,12 +110,8 @@ bool AccountManager::addUser(const std::string &userID,
                              const std::string &password,
                              int privilege) {
 
-    if (currentPrivilege() < privilege && privilege != 1) {
-        return false;
-    }
-    if (privilege >= 7) {
-        return false;
-    }
+    if (privilege != 1 && privilege != 3 && privilege != 7) return false;
+    if (currentPrivilege() <= privilege) return false;
 
     UserRecord tmp;
     if (db.getUser(userID, tmp)) {
