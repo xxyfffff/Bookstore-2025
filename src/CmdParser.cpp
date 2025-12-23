@@ -71,8 +71,12 @@ static bool isValidKeyword(const std::string &s) {
 }
 
 static bool isValidQuantity(const std::string &s) {
-    if (s.empty() || s.size() > 10) return false;
-    for (char c: s)
+    if (s.empty()) return false;
+
+    // 不能有前导 0
+    if (s.size() > 1 && s[0] == '0') return false;
+
+    for (char c : s)
         if (!std::isdigit(c)) return false;
 
     try {
@@ -84,14 +88,35 @@ static bool isValidQuantity(const std::string &s) {
 }
 
 static bool isValidPrice(const std::string &s) {
-    if (s.empty() || s.size() > 13) return false;
+    if (s.empty()) return false;
 
     bool dot = false;
-    for (char c: s) {
+    int dotPos = -1;
+
+    for (int i = 0; i < (int)s.size(); i++) {
+        char c = s[i];
         if (c == '.') {
-            if (dot) return false;
+            if (dot) return false;   // 多个点
             dot = true;
+            dotPos = i;
         } else if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+
+    if (dot) {
+        if (dotPos == 0 || dotPos == (int)s.size() - 1) {
+            return false;
+        }
+
+        if ((int)s.size() - dotPos - 1 > 2) {
+            return false;
+        }
+    }
+
+
+    if (s[0] == '0') {
+        if (s.size() > 1 && s[1] != '.') {
             return false;
         }
     }
