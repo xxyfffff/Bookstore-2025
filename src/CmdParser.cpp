@@ -118,7 +118,7 @@ static bool isValidPrice(const std::string &s) {
 
     // 5. 数值合法性校验：转换为数值并判断>0
     double priceVal = std::stod(s);
-    if (priceVal <= 0) return false; // 确保正数
+    if (priceVal < 0) return false;
 
     // 6. 整数部分长度限制
     int integerLen = (dotPos == -1) ? s.size() : dotPos;
@@ -136,6 +136,7 @@ std::vector<std::string> CmdParser::tokenize(const std::string &line) {
 
     for (char c: line) {
         if (c == '\"') {
+            token += c;   // 保留引号
             inQuote = !inQuote;
         } else if (c == ' ') {
             if (inQuote) {
@@ -153,6 +154,7 @@ std::vector<std::string> CmdParser::tokenize(const std::string &line) {
     }
     return res;
 }
+
 
 CommandType CmdParser::determineType(const std::vector<std::string> &tokens) {
     if (tokens.empty()) {
@@ -246,16 +248,28 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
             if (n == 1) return true;
             if (n != 2) return false;
 
-            auto pos = t[1].find('=');
+            const std::string &arg = t[1];
+            auto pos = arg.find('=');
             if (pos == std::string::npos) return false;
 
-            std::string key = t[1].substr(1, pos - 1);
-            std::string val = t[1].substr(pos + 1);
+            std::string key = arg.substr(1, pos - 1);
+            std::string rawVal = arg.substr(pos + 1);
 
-            if (key == "ISBN") return isValidISBN(val);
-            if (key == "name") return isValidBookText(val);
-            if (key == "author") return isValidBookText(val);
-            if (key == "keyword") return isValidKeyword(val);
+            if (key == "ISBN") {
+                return isValidISBN(rawVal);
+            }
+
+            // name / author / keyword 必须加引号
+            if (key == "name" || key == "author" || key == "keyword") {
+                if (rawVal.size() < 2) return false;
+                if (rawVal.front() != '"' || rawVal.back() != '"') return false;
+
+                // 去掉引号再验证
+                std::string val = rawVal.substr(1, rawVal.size() - 2);
+
+                if (key == "keyword") return isValidKeyword(val);
+                return isValidBookText(val);
+            }
 
             return false;
         }
@@ -265,21 +279,37 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
 
         case CommandType::MODIFY:
             if (n < 2) return false;
-            for (int i = 1; i < n; i++) {
-                auto &a = t[i];
-                if (a.size() < 3 || a[0] != '-') return false;
-                auto pos = a.find('=');
+            for (int i = 1; i < n; ++i) {
+                const std::string &arg = t[i];
+                if (arg.size() < 3 || arg[0] != '-') return false;
+
+                auto pos = arg.find('=');
                 if (pos == std::string::npos) return false;
 
-                std::string key = a.substr(1, pos - 1);
-                std::string val = a.substr(pos + 1);
+                std::string key = arg.substr(1, pos - 1);
+                std::string rawVal = arg.substr(pos + 1);
 
-                if (key == "ISBN" && !isValidISBN(val)) return false;
-                if (key == "name" && !isValidBookText(val)) return false;
-                if (key == "author" && !isValidBookText(val)) return false;
-                if (key == "keyword" && !isValidKeyword(val)) return false;
-                if (key == "price" && !isValidPrice(val)) return false;
-                if (key == "stock" && !isValidQuantity(val)) return false;
+                if (key == "ISBN") {
+                    if (!isValidISBN(rawVal)) return false;
+                } else if (key == "price") {
+                    if (!isValidPrice(rawVal)) return false;
+                } else if (key == "stock") {
+                    if (!isValidQuantity(rawVal)) return false;
+                } else if (key == "name" || key == "author" || key == "keyword") {
+                    // 必须带引号
+                    if (rawVal.size() < 2) return false;
+                    if (rawVal.front() != '"' || rawVal.back() != '"') return false;
+
+                    std::string val = rawVal.substr(1, rawVal.size() - 2);
+
+                    if (key == "keyword") {
+                        if (!isValidKeyword(val)) return false;
+                    } else {
+                        if (!isValidBookText(val)) return false;
+                    }
+                } else {
+                    return false; // 非法 key
+                }
             }
             return true;
 
@@ -315,17 +345,32 @@ ParsedCommand CmdParser::parseLine(const std::string &line) {
     ParsedCommand res;
 
     auto tokens = tokenize(line);
-    if (tokens.empty()) {
-        return res;
-    }
+    if (tokens.empty()) return res;
 
     CommandType type = determineType(tokens);
     if (!validate(tokens, type)) {
         res.type = CommandType::INVALID;
         return res;
     }
+
     res.type = type;
 
-    res.args.assign(tokens.begin() + 1, tokens.end());
+    // 传给 args 时去掉引号
+    res.args.clear();
+    for (size_t i = 1; i < tokens.size(); ++i) {
+        std::string arg = tokens[i];
+        auto pos = arg.find('=');
+        if (pos != std::string::npos) {
+            std::string key = arg.substr(0, pos+1);
+            std::string val = arg.substr(pos+1);
+            if (!val.empty() && val.front() == '"' && val.back() == '"') {
+                val = val.substr(1, val.size() - 2); // 去掉引号
+            }
+            res.args.push_back(key + val);
+        } else {
+            res.args.push_back(arg);
+        }
+    }
+
     return res;
 }
