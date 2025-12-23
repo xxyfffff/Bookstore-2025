@@ -88,38 +88,43 @@ static bool isValidQuantity(const std::string &s) {
 }
 
 static bool isValidPrice(const std::string &s) {
-    if (s.empty()) return false;
+    // 1. 基础长度和非空校验
+    if (s.empty() || s.size() > 13) return false;
 
-    int n = s.size();
+    // 2. 字符集和小数点校验
     int dotPos = -1;
-
-    for (int i = 0; i < n; ++i) {
-        char c = s[i];
-        if (c == '.') {
-            if (dotPos != -1) return false; // 多个 .
+    for (int i = 0; i < (int)s.size(); ++i) {
+        if (s[i] == '.') {
+            if (dotPos != -1) return false; // 多个小数点
             dotPos = i;
-        } else if (!std::isdigit(c)) {
-            return false;
+        } else if (!isdigit(s[i])) {
+            return false; // 非数字非小数点
         }
     }
 
-    // 不能是 ".1" 或 "1."
-    if (dotPos == 0 || dotPos == n - 1)
-        return false;
+    // 3. 小数点位置合法性
+    if (dotPos == 0) return false;
 
-    // 小数位数不超过 2
-    if (dotPos != -1 && n - dotPos - 1 > 2)
-        return false;
-
-    if (s[0] == '0' && n > 1 && s[1] != '.')
-        return false;
-
-    try {
-        double v = std::stod(s);
-        return v >= 0;
-    } catch (...) {
-        return false;
+    // 4. 前导0规则校验
+    if (dotPos == -1) {
+        // 无小数点（纯整数）
+        if (s.size() > 1 && s[0] == '0') return false;
+    } else {
+        // 有小数点（小数）
+        if (dotPos > 1 && s[0] == '0') return false;
+        int fracLen = s.size() - dotPos - 1;
+        if (fracLen == 0 || fracLen > 2) return false; // 小数部分不能为空或超过2位
     }
+
+    // 5. 数值合法性校验：转换为数值并判断>0
+    double priceVal = std::stod(s);
+    if (priceVal <= 0) return false; // 确保正数
+
+    // 6. 整数部分长度限制
+    int integerLen = (dotPos == -1) ? s.size() : dotPos;
+    if (integerLen > 10) return false; // 整数部分最多10位，避免数值过大
+
+    return true;
 }
 
 
