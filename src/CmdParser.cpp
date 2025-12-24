@@ -13,18 +13,6 @@ static bool isVisibleASCII(char c) {
     return c > 32 && c <= 126;
 }
 
-static bool isAllDigit(const std::string &s) {
-    if (s.empty()) {
-        return false;
-    }
-    for (char c: s) {
-        if (!std::isdigit(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 static bool isValidUserID(const std::string &s) {
     if (s.empty() || s.size() > 30) {
         return false;
@@ -369,7 +357,7 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
 
         case CommandType::SHOWFINANCE:
             if (n == 2) return true;
-            if (n == 3) return isAllDigit(t[2]);
+            if (n == 3) return isValidQuantity(t[2]);
             return false;
 
         case CommandType::LOG:
