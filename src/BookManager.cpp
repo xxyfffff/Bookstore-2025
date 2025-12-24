@@ -81,6 +81,7 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "KEYWORD") {
+            exit(1);
             if (key.empty()) return false;
             if (key.find('|') != std::string::npos) return false;
             ids = db.findByKeyword(key);
