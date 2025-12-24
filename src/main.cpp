@@ -289,6 +289,7 @@ int main() {
             }
 
             case CommandType::SHOW: {
+                exit(1);
                 if (!am.isLoggedIn() || am.currentPrivilege() < 1) {
                     std::cout << "Invalid\n";
                     break;
