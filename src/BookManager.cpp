@@ -276,7 +276,7 @@ bool BookManager::import(int quantity, double totalCost) {
     if (!s->book.hasSelect) {
         return false;
     }
-    if (quantity <= 0 || totalCost < 0) {
+    if (quantity <= 0 || totalCost <= 0) {
         return false;
     }
     if (s->book.offset < 0) {
