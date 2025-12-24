@@ -57,6 +57,7 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "NAME") {
+            exit(1);
             ids = db.findByName(key);
             /* 调试
             for (auto id : ids) {
@@ -69,7 +70,7 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "AUTHOR") {
-            exit(1);
+            //exit(1);
             ids = db.findByAuthor(key);
             /* 调试
             for (auto id : ids) {
