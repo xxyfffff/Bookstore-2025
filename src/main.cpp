@@ -54,7 +54,6 @@ int main() {
         switch (cmd.type) {
             case CommandType::QUIT:
             case CommandType::EXIT:
-                //std::cout << "Exiting...\n";
                 return 0;
 
                 /* ================= 帐户相关 ================= */

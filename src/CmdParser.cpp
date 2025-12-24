@@ -7,21 +7,28 @@
 #include <climits>
 #include <cstdint>
 #include <iostream>
+#include <unordered_set>
 
 static bool isVisibleASCII(char c) {
     return c >= 32 && c <= 126;
 }
 
 static bool isAllDigit(const std::string &s) {
-    if (s.empty()) return false;
+    if (s.empty()) {
+        return false;
+    }
     for (char c: s) {
-        if (!std::isdigit(c)) return false;
+        if (!std::isdigit(c)) {
+            return false;
+        }
     }
     return true;
 }
 
 static bool isValidUserID(const std::string &s) {
-    if (s.empty() || s.size() > 30) return false;
+    if (s.empty() || s.size() > 30) {
+        return false;
+    }
     for (char c: s) {
         if (!(std::isalnum(c) || c == '_')) return false;
     }
@@ -29,7 +36,9 @@ static bool isValidUserID(const std::string &s) {
 }
 
 static bool isValidUsername(const std::string &s) {
-    if (s.empty() || s.size() > 30) return false;
+    if (s.empty() || s.size() > 30) {
+        return false;
+    }
     for (char c: s)
         if (!isVisibleASCII(c)) return false;
     return true;
@@ -40,22 +49,30 @@ static bool isValidPrivilege(const std::string &s) {
 }
 
 static bool isValidISBN(const std::string &s) {
-    if (s.empty() || s.size() > 20) return false;
+    if (s.empty() || s.size() > 20) {
+        return false;
+    }
     for (char c: s)
         if (!isVisibleASCII(c)) return false;
     return true;
 }
 
 static bool isValidBookText(const std::string &s) {
-    if (s.empty() || s.size() > 60) return false;
+    if (s.empty() || s.size() > 60) {
+        return false;
+    }
     for (char c: s) {
-        if (!isVisibleASCII(c) || c == '"') return false;
+        if (!isVisibleASCII(c) || c == '"') {
+            return false;
+        }
     }
     return true;
 }
 
 static bool isValidKeyword(const std::string &s) {
-    if (s.empty() || s.size() > 60) return false;
+    if (s.empty() || s.size() > 60) {
+        return false;
+    }
 
     bool lastWasSep = true; // 防止开头就是 |
     for (char c: s) {
@@ -74,10 +91,14 @@ static bool isValidQuantity(const std::string &s) {
     if (s.empty()) return false;
 
     // 不能有前导 0
-    if (s.size() > 1 && s[0] == '0') return false;
+    if (s.size() > 1 && s[0] == '0') {
+        return false;
+    }
 
     for (char c: s)
-        if (!std::isdigit(c)) return false;
+        if (!std::isdigit(c)) {
+            return false;
+        }
 
     try {
         long long v = std::stoll(s);
@@ -88,10 +109,12 @@ static bool isValidQuantity(const std::string &s) {
 }
 
 static bool isValidPrice(const std::string &s) {
-    // 1. 基础长度和非空校验
-    if (s.empty() || s.size() > 13) return false;
+    // 长度和非空
+    if (s.empty() || s.size() > 13) {
+        return false;
+    }
 
-    // 2. 字符集和小数点校验
+    // 字符集和小数点
     int dotPos = -1;
     for (int i = 0; i < (int)s.size(); ++i) {
         if (s[i] == '.') {
@@ -102,27 +125,39 @@ static bool isValidPrice(const std::string &s) {
         }
     }
 
-    // 3. 小数点位置合法性
-    if (dotPos == 0) return false;
-
-    // 4. 前导0规则校验
-    if (dotPos == -1) {
-        // 无小数点（纯整数）
-        if (s.size() > 1 && s[0] == '0') return false;
-    } else {
-        // 有小数点（小数）
-        if (dotPos > 1 && s[0] == '0') return false;
-        int fracLen = s.size() - dotPos - 1;
-        if (fracLen == 0 || fracLen > 2) return false; // 小数部分不能为空或超过2位
+    // 小数点位置合法性
+    if (dotPos == 0) {
+        return false;
     }
 
-    // 5. 数值合法性校验：转换为数值并判断>0
-    double priceVal = std::stod(s);
-    if (priceVal < 0) return false;
+    // 前导0规则校验
+    if (dotPos == -1) {
+        // 无小数点（纯整数）
+        if (s.size() > 1 && s[0] == '0') {
+            return false;
+        }
+    } else {
+        // 有小数点（小数）
+        if (dotPos > 1 && s[0] == '0') {
+            return false;
+        }
+        int fracLen = s.size() - dotPos - 1;
+        if (fracLen == 0 || fracLen > 2) {// 小数部分不能为空或超过2位
+            return false;
+        }
+    }
 
-    // 6. 整数部分长度限制
+    // 数值合法性校验：转换为数值并判断>0
+    double priceVal = std::stod(s);
+    if (priceVal < 0) {
+        return false;
+    }
+
+    // 整数部分长度限制
     int integerLen = (dotPos == -1) ? s.size() : dotPos;
-    if (integerLen > 10) return false; // 整数部分最多10位，避免数值过大
+    if (integerLen > 10) {
+        return false;
+    }
 
     return true;
 }
@@ -245,12 +280,18 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
             return false;
 
         case CommandType::SHOW: {
-            if (n == 1) return true;
-            if (n != 2) return false;
+            if (n == 1) {
+                return true;
+            }
+            if (n != 2) {
+                return false;
+            }
 
             const std::string &arg = t[1];
             auto pos = arg.find('=');
-            if (pos == std::string::npos) return false;
+            if (pos == std::string::npos) {
+                return false;
+            }
 
             std::string key = arg.substr(1, pos - 1);
             std::string rawVal = arg.substr(pos + 1);
@@ -277,8 +318,9 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
         case CommandType::SELECT:
             return n == 2 && isValidISBN(t[1]);
 
-        case CommandType::MODIFY:
+        case CommandType::MODIFY: {
             if (n < 2) return false;
+            std::unordered_set<std::string> seenKeys;
             for (int i = 1; i < n; ++i) {
                 const std::string &arg = t[i];
                 if (arg.size() < 3 || arg[0] != '-') return false;
@@ -288,7 +330,8 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
 
                 std::string key = arg.substr(1, pos - 1);
                 std::string rawVal = arg.substr(pos + 1);
-
+                if (seenKeys.count(key)) return false;
+                seenKeys.insert(key);
                 if (key == "ISBN") {
                     if (!isValidISBN(rawVal)) return false;
                 } else if (key == "price") {
@@ -312,6 +355,7 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
                 }
             }
             return true;
+        }
 
         case CommandType::IMPORT:
             return n == 3 &&

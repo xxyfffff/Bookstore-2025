@@ -9,15 +9,12 @@ include_directories(include)
 
 add_executable(code
         include/Types.h
-        include/Utils.h
-        include/Utils.h
         include/CmdParser.h
         include/AccountManager.h
         include/BookManager.h
         include/Logger.h
         include/Persistence.h
         src/Persistence.cpp
-        src/Utils.cpp
         src/AccountManager.cpp
         src/BookManager.cpp
         src/CmdParser.cpp

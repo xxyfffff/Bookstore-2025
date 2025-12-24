@@ -126,19 +126,19 @@ bool AccountManager::deleteUser(const std::string &userID) {
         return false;
     }
 
-    // 1. 用户必须存在
+    // 用户存在
     UserRecord tmp;
     if (!db.getUser(userID, tmp)) {
         return false;
     }
 
-    // 2. 用户不能处于登录状态（在 loginStack 中）
+    // 用户不能loginStack 中
     for (auto &sess : loginStack) {
         if (sess.user.userID == userID) {
             return false;
         }
     }
 
-    // 3. 删除
+    // 删除
     return db.deleteUser(userID);
 }

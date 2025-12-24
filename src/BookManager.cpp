@@ -195,7 +195,7 @@ bool BookManager::modify(int fieldFlag, const std::string &newValue) {
                 seen.insert(kw);
             }
 
-            // 检查每个关键字是否合法（可选）
+            // 检查每个关键字是否合法
             for (auto &kw : keywords) {
                 if (kw.empty()) return false; // 空关键字非法
             }
