@@ -69,6 +69,7 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "AUTHOR") {
+            exit(1);
             ids = db.findByAuthor(key);
             /* 调试
             for (auto id : ids) {
@@ -81,7 +82,7 @@ bool BookManager::show(const std::string &field,
             */
         }
         else if (field == "KEYWORD") {
-            exit(1);
+            //exit(1);
             if (key.empty()) return false;
             if (key.find('|') != std::string::npos) return false;
             ids = db.findByKeyword(key);
