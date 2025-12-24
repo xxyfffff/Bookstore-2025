@@ -35,75 +35,48 @@ namespace user{
         return u;
     }
 
-} // anonymous namespace
+}
 
 static const int NodeSpace = 1600;
 
-class Lines {
-private:
+struct Entry {
     char index[65];
     int value;
-public:
-    Lines() {
-        memset(index, 0, 65);
-        value = 0;
-    }
-    Lines(const std::string& idx, int val) {
+    Entry() = default;
+    Entry(const std::string& idx, int val) {
         value = val;
         strncpy(index, idx.c_str(), 64);
         index[64] = '\0';
     }
-    std::string getIndex() const {
-        return std::string(index);
-    }
-    int getValue() const {
-        return value;
-    }
-    bool operator<(const Lines& other) const {
+    bool operator<(const Entry& other) const {
         int cmp = strcmp(index, other.index);
         if (cmp != 0) return cmp < 0;
         return value < other.value;
     }
-    bool operator==(const Lines& other) const {
+    bool operator==(const Entry& other) const {
         return strcmp(index, other.index) == 0 && value == other.value;
     }
 };
 
-class Node {
-private:
+struct Node {
     int size;
     int next;
-    Lines data[NodeSpace];
-public:
+    Entry data[NodeSpace];
+
     Node() {
         size = 0;
         next = -1;
     }
-    void setSize(int Size) {
-        size = Size;
-    }
-    int getSize() const {
-        return size;
-    }
-    int getNext() const {
-        return next;
-    }
-    void setNext(int n) {
-        next = n;
-    }
-    Lines getData(int idx) const {
-        if (idx >= 0 && idx < size) return data[idx];
-        return Lines();
-    }
-    void setData(int idx, const Lines& l) {
+    void setData(int idx, const Entry& l) {
         if (idx >= 0 && idx < NodeSpace) data[idx] = l;
     }
-    Lines last_line() const {
-        if (size == 0) return Lines();
+
+    Entry last_entry() const {
+        if (size == 0) return Entry();
         return data[size-1];
     }
     void node_insert(const std::string& s, int val) {
-        Lines l(s, val);
+        Entry l(s, val);
         if (size == 0 || l < data[0]) {
             for (int j = size; j >= 1; j--) data[j] = data[j-1];
             data[0] = l;
@@ -124,11 +97,11 @@ public:
     }
     void node_find(const std::string& s, std::vector<int>& res) {
         for (int i = 0; i < size; i++) {
-            if (data[i].getIndex() == s) res.push_back(data[i].getValue());
+            if (data[i].index == s) res.push_back(data[i].value);
         }
     }
     bool node_delete(const std::string& s, int val) {
-        Lines l(s, val);
+        Entry l(s, val);
         for (int i = 0; i < size; i++) {
             if (data[i] == l) {
                 for (int j = i+1; j < size; j++) data[j-1] = data[j];
@@ -141,8 +114,8 @@ public:
 
     std::pair<Node, Node> split(int pos) {
         Node new_node;
-        new_node.setNext(next);
-        new_node.setSize(NodeSpace/2);
+        new_node.next = next;
+        new_node.size = NodeSpace/2;
         size = NodeSpace/2;
         next = pos;
         for (int i = 0; i < NodeSpace/2; i++) {
@@ -248,14 +221,14 @@ public:
     }
 
     void insert(const std::string& s, int val) {
-        Lines l(s, val);
+        Entry l(s, val);
         int cnt = head;
         Node now;
         while (true) {
             nodeRiver.read(now, cnt);
-            if (now.getNext() == -1 || l < now.last_line() || l == now.last_line()) {
+            if (now.next == -1 || l < now.last_entry() || l == now.last_entry()) {
                 now.node_insert(s, val);
-                if (now.getSize() >= NodeSpace) {
+                if (now.size >= NodeSpace) {
                     int pos = nodeRiver.end();
                     auto p = now.split(pos);
                     nodeRiver.write(p.second);
@@ -265,7 +238,7 @@ public:
                 }
                 return;
             }
-            cnt = now.getNext();
+            cnt = now.next;
         }
     }
 
@@ -275,13 +248,13 @@ public:
         std::vector<int> res;
         while (cnt != -1) {
             nodeRiver.read(now, cnt);
-            if (now.getSize() > 0 && s > now.last_line().getIndex()) {
-                cnt = now.getNext();
+            if (now.size > 0 && s > now.last_entry().index) {
+                cnt = now.next;
                 continue;
             }
             now.node_find(s, res);
-            if (now.getSize() > 0 && s < now.last_line().getIndex()) break;
-            cnt = now.getNext();
+            if (now.size > 0 && s < now.last_entry().index) break;
+            cnt = now.next;
         }
         return res;
     }
@@ -291,16 +264,16 @@ public:
         Node now;
         while (cnt != -1) {
             nodeRiver.read(now, cnt);
-            if (now.getSize() > 0 && s > now.last_line().getIndex()) {
-                cnt = now.getNext();
+            if (now.size > 0 && s > now.last_entry().index) {
+                cnt = now.next;
                 continue;
             }
             if (now.node_delete(s, val)) {
                 nodeRiver.update(now, cnt);
                 return;
             }
-            if (now.getSize() > 0 && s < now.last_line().getIndex()) break;
-            cnt = now.getNext();
+            if (now.size > 0 && s < now.last_entry().index) break;
+            cnt = now.next;
         }
     }
 
@@ -313,17 +286,17 @@ public:
             nodeRiver.read(now, cnt);
             std::cerr << "Node " << node_id++
                       << " at " << cnt
-                      << ", size=" << now.getSize()
-                      << ", next=" << now.getNext() << "\n";
-            for (int i = 0; i < now.getSize(); ++i) {
-                auto l = now.getData(i);
+                      << ", size=" << now.size
+                      << ", next=" << now.next << "\n";
+            for (int i = 0; i < now.size; ++i) {
+                auto l = now.data[i];
                 std::cerr << "  [" << i << "] "
-                          << l.getIndex()
+                          << l.index
                           << " -> "
-                          << l.getValue()
+                          << l.value
                           << "\n";
             }
-            cnt = now.getNext();
+            cnt = now.next;
         }
         std::cerr << "=== End dump ===\n";
     }

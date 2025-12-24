@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 static bool isVisibleASCII(char c) {
-    return c >= 32 && c <= 126;
+    return c > 32 && c <= 126;
 }
 
 static bool isAllDigit(const std::string &s) {

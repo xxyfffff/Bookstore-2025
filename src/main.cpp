@@ -200,7 +200,7 @@ int main() {
             }
 
             case CommandType::MODIFY: {
-                exit(1);
+                //exit(1);
                 if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
                     std::cout << "Invalid\n";
                     break;
