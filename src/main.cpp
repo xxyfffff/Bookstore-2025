@@ -99,6 +99,7 @@ int main() {
             }
 
             case CommandType::LOGOUT: {
+                exit(1);
                 if (am.logout()) {
                     //std::cout << "Logged out\n";
                 } else {
@@ -145,7 +146,7 @@ int main() {
             }
 
             case CommandType::DELETE: {
-                exit(1);
+                //exit(1);
                 if (cmd.args.size() != 1) {
                     std::cout << "Invalid\n";
                     break;
