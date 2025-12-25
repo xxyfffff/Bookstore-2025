@@ -136,8 +136,7 @@ int main() {
                     break;
                 }
 
-                // 权限只能是 1 / 3 / 7
-                if (!(priv == 1 || priv == 3 || priv == 7)) {
+                if (!(priv == 1 || priv == 3 || priv == 0)) {
                     std::cout << "Invalid\n";
                     break;
                 }
