@@ -90,7 +90,7 @@ static bool isValidQuantity(const std::string &s) {
 
     try {
         long long v = std::stoll(s);
-        return v > 0 && v <= INT32_MAX;
+        return v >= 0 && v <= INT32_MAX;
     } catch (...) {
         return false;
     }
@@ -276,6 +276,7 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
             }
 
             const std::string &arg = t[1];
+            if (arg[0] != '-') return false;
             auto pos = arg.find('=');
             if (pos == std::string::npos) {
                 return false;
@@ -324,8 +325,6 @@ bool CmdParser::validate(const std::vector<std::string> &t, CommandType type) {
                     if (!isValidISBN(rawVal)) return false;
                 } else if (key == "price") {
                     if (!isValidPrice(rawVal)) return false;
-                } else if (key == "stock") {
-                    if (!isValidQuantity(rawVal)) return false;
                 } else if (key == "name" || key == "author" || key == "keyword") {
                     // 必须带引号
                     if (rawVal.size() < 2) return false;
