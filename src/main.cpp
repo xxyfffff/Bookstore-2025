@@ -145,6 +145,7 @@ int main() {
             }
 
             case CommandType::DELETE: {
+                exit(1);
                 if (cmd.args.size() != 1) {
                     std::cout << "Invalid\n";
                     break;
