@@ -79,7 +79,7 @@ bool AccountManager::su(const std::string &targetUserID) {
 }
 
 bool AccountManager::logout() {
-    if (loginStack.empty()) {
+    if (loginStack.empty() || currentPrivilege() == 0) {
         return false;
     }
     loginStack.pop_back();

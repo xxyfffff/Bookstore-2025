@@ -140,12 +140,6 @@ static bool isValidPrice(const std::string &s) {
         return false;
     }
 
-    // 整数部分长度限制
-    int integerLen = (dotPos == -1) ? s.size() : dotPos;
-    if (integerLen > 10) {
-        return false;
-    }
-
     return true;
 }
 

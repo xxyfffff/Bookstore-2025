@@ -80,7 +80,6 @@ int main() {
                 }
                 if (cmd.args.size() == 1) {
                     if (am.su(cmd.args[0])) {
-                        bm.resetSelected();
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
@@ -89,7 +88,6 @@ int main() {
                 }
                 if (cmd.args.size() == 2) {
                     if (am.login(cmd.args[0], cmd.args[1])) {
-                        bm.resetSelected();
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
