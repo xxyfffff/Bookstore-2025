@@ -58,7 +58,7 @@ int main() {
 
                 /* ================= 帐户相关 ================= */
             case CommandType::REGISTER: {
-                exit(1);
+                //exit(1);
                 if (cmd.args.size() != 3) {
                     std::cout << "Invalid\n";
                     break;
