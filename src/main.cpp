@@ -99,7 +99,7 @@ int main() {
             }
 
             case CommandType::LOGOUT: {
-                exit(1);
+                //exit(1);
                 if (am.logout()) {
                     //std::cout << "Logged out\n";
                 } else {
@@ -111,6 +111,10 @@ int main() {
             case CommandType::USERADD: {
                 //exit(1);
                 if (cmd.args.size() != 4) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+                if (!am.isLoggedIn() || am.currentPrivilege() < 3) {
                     std::cout << "Invalid\n";
                     break;
                 }

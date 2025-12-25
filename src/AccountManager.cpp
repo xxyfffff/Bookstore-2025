@@ -115,9 +115,6 @@ bool AccountManager::changePassword(const std::string &userID,
 
         return db.updateUser(userID, newPwd);
     }
-
-    user.password = newPwd;
-    return db.updateUser(userID, newPwd) ;
 }
 
 bool AccountManager::addUser(const std::string &userID,
