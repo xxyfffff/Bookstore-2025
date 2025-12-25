@@ -89,39 +89,27 @@ bool AccountManager::logout() {
 bool AccountManager::changePassword(const std::string &userID,
                                     const std::string &oldPwd,
                                     const std::string &newPwd) {
-    if (loginStack.empty()) {
-        return false;
-    }
+    if (currentPrivilege() < 1) return false;
+
     UserRecord user;
-    if (!db.getUser(userID, user)) {
-        return false;
-    }
-    bool isAdmin = (currentPrivilege() == 7);
+    if (!db.getUser(userID, user)) return false;
 
-    if (isAdmin) {
-        return db.updateUser(userID, newPwd) ;
-    }
-    else {
-        if (userID != user.userID) {
-            return false;
-        }
-
-        if (oldPwd.empty()) {
-            return false;
-        }
-        if (user.password != oldPwd) {
-            return false;
-        }
-
+    if (currentPrivilege() == 7) {
+        // root 可免密
         return db.updateUser(userID, newPwd);
     }
+
+    if (oldPwd.empty()) return false;
+    if (user.password != oldPwd) return false;
+
+    return db.updateUser(userID, newPwd);
 }
 
 bool AccountManager::addUser(const std::string &userID,
                              const std::string &password,
                              int privilege) {
 
-    if (privilege != 1 && privilege != 3 && privilege != 7) return false;
+    if (privilege != 1 && privilege != 3) return false;
     if (privilege != 1 && currentPrivilege() <= privilege) return false;
 
     UserRecord tmp;

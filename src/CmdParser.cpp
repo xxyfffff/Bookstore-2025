@@ -135,7 +135,6 @@ static bool isValidPrice(const std::string &s) {
         }
     }
 
-    // 数值合法性校验：转换为数值并判断>0
     double priceVal = std::stod(s);
     if (priceVal < 0) {
         return false;
