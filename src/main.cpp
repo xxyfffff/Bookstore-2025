@@ -157,6 +157,7 @@ int main() {
             }
 
             case CommandType::PASSWD: {
+                exit(1);
                 if (cmd.args.size() != 2 && cmd.args.size() != 3) {
                     std::cout << "Invalid\n";
                     break;
