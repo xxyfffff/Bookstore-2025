@@ -10,14 +10,6 @@
 #include <iostream>
 #include <unordered_set>
 
-void print(BookRecord b) {
-    std::cout << b.ISBN << '\t'
-                              << b.title << '\t'
-                              << b.author << '\t'
-                              << b.keyword_list << '\t'
-                              << std::fixed << std::setprecision(2) << b.price << '\t'
-                              << b.stock << '\n';
-}
 AccountSession* BookManager::curSession() {
     return account.currentSession();
 }

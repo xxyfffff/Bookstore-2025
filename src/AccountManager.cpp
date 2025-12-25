@@ -89,13 +89,14 @@ bool AccountManager::logout() {
 bool AccountManager::changePassword(const std::string &userID,
                                     const std::string &oldPwd,
                                     const std::string &newPwd) {
-    if (currentPrivilege() < 1) return false;
+    if (loginStack.empty() || currentPrivilege() < 1) return false;
 
     UserRecord user;
     if (!db.getUser(userID, user)) return false;
 
     if (currentPrivilege() == 7) {
         // root 可免密
+        if (user.password != oldPwd) return false;
         return db.updateUser(userID, newPwd);
     }
 
