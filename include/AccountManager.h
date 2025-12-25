@@ -18,10 +18,9 @@ public:
     bool registerUser(const std::string &userID,
                       const std::string &password);
 
-    bool login(const std::string &userID,
+    bool su(const std::string &userID,
                const std::string &password);
 
-    bool su(const std::string &targetUserID);   // 无密码切换
     bool logout();
 
     bool changePassword(const std::string &userID,

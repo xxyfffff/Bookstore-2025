@@ -36,46 +36,32 @@ std::string AccountManager::currentPasswd() const {
     return loginStack.back().user.password;
 }
 
-bool AccountManager::login(const std::string &userID,
-                           const std::string &password) {
-    UserRecord user;
-    if (!db.getUser(userID, user)) {
-        //std::cerr << "user not exist\n";
-        return false;
-    }
-    if (user.password != password) {
-        //std::cerr << "wrong password\n";
-        return false;
-    }
-
-    AccountSession s;
-    s.user = user;
-    s.book.hasSelect = false;
-    s.book.offset = -1;
-    loginStack.push_back(s);
-    return true;
-}
-
-bool AccountManager::su(const std::string &targetUserID) {
-    if (loginStack.empty()) return false;
-
+bool AccountManager::su(const std::string &userID,
+                        const std::string &password) {
     UserRecord target;
-    if (!db.getUser(targetUserID, target)) {
+    if (!db.getUser(userID, target)) {
         return false;
     }
 
-    // 只能向下 su
-    if (target.privilege >= currentPrivilege()) {
-        return false;
+    int curPriv = currentPrivilege();
+
+    if (curPriv > target.privilege) {
+        if (!password.empty() && password != target.password) {
+            return false;
+        }
+    }
+    else {
+        if (password.empty() || password != target.password) {
+            return false;
+        }
     }
 
     AccountSession s;
     s.user = target;
     s.book.hasSelect = false;
-
+    s.book.offset = -1;
     loginStack.push_back(s);
     return true;
-
 }
 
 bool AccountManager::logout() {
@@ -96,7 +82,7 @@ bool AccountManager::changePassword(const std::string &userID,
 
     if (currentPrivilege() == 7) {
         // root 可免密
-        if (user.password != oldPwd) return false;
+        if (!oldPwd.empty() && user.password != oldPwd) return false;
         return db.updateUser(userID, newPwd);
     }
 
@@ -132,7 +118,7 @@ bool AccountManager::deleteUser(const std::string &userID) {
         return false;
     }
 
-    // 用户不能loginStack 中
+    // 用户在loginStack 中
     for (auto &sess : loginStack) {
         if (sess.user.userID == userID) {
             return false;

@@ -79,7 +79,7 @@ int main() {
                     break;
                 }
                 if (cmd.args.size() == 1) {
-                    if (am.su(cmd.args[0])) {
+                    if (am.su(cmd.args[0], "")) {
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
@@ -87,7 +87,7 @@ int main() {
                     break;
                 }
                 if (cmd.args.size() == 2) {
-                    if (am.login(cmd.args[0], cmd.args[1])) {
+                    if (am.su(cmd.args[0], cmd.args[1])) {
                         //std::cout << "Switched to " << cmd.args[0] << "\n";
                     } else {
                         std::cout << "Invalid\n";
