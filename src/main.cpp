@@ -157,8 +157,12 @@ int main() {
             }
 
             case CommandType::PASSWD: {
-                exit(1);
+                //exit(1);
                 if (cmd.args.size() != 2 && cmd.args.size() != 3) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+                if (!am.isLoggedIn() || am.currentPrivilege() < 1) {
                     std::cout << "Invalid\n";
                     break;
                 }
