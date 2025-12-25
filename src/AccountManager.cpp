@@ -89,17 +89,31 @@ bool AccountManager::logout() {
 bool AccountManager::changePassword(const std::string &userID,
                                     const std::string &oldPwd,
                                     const std::string &newPwd) {
+    if (loginStack.empty()) {
+        return false;
+    }
     UserRecord user;
     if (!db.getUser(userID, user)) {
         return false;
     }
     bool isAdmin = (currentPrivilege() == 7);
 
-    if (oldPwd.empty() && !isAdmin) {
-        return false;
+    if (isAdmin) {
+        return db.updateUser(userID, newPwd) ;
     }
-    if (!isAdmin && user.password != oldPwd) {
-        return false;
+    else {
+        if (userID != user.userID) {
+            return false;
+        }
+
+        if (oldPwd.empty()) {
+            return false;
+        }
+        if (user.password != oldPwd) {
+            return false;
+        }
+
+        return db.updateUser(userID, newPwd);
     }
 
     user.password = newPwd;

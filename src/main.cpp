@@ -108,7 +108,7 @@ int main() {
             }
 
             case CommandType::USERADD: {
-                exit(1);
+                //exit(1);
                 if (cmd.args.size() != 4) {
                     std::cout << "Invalid\n";
                     break;
