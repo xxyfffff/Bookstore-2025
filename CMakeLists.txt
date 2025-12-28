@@ -12,13 +12,11 @@ add_executable(code
         include/CmdParser.h
         include/AccountManager.h
         include/BookManager.h
-        include/Logger.h
         include/Persistence.h
         src/Persistence.cpp
         src/AccountManager.cpp
         src/BookManager.cpp
         src/CmdParser.cpp
-        src/Logger.cpp
         src/Persistence.cpp
         src/main.cpp
         include/Transaction.h

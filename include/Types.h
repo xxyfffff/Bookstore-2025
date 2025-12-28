@@ -37,10 +37,19 @@ struct BookRecord {
 #pragma pack(pop)
 
 struct FinanceRecord {
-    double delta;             // +收入 / -支出
+    double delta;  // +收入 / -支出
+    char userID[64];
+    char type[32];
+};
+
+struct EmployeeRecord {
+    char userID[32];
+    char action[128];
 };
 
 struct LogRecord {
-    char message[128];
+    char userID[64];
+    char action[128];
+    double money;
 };
 #endif //BOOKSTORE_TYPES_H

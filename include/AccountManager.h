@@ -15,9 +15,6 @@ public:
     AccountSession* currentSession();
     explicit AccountManager(Persistence &persistence);
 
-    bool registerUser(const std::string &userID,
-                      const std::string &password);
-
     bool su(const std::string &userID,
                const std::string &password);
 

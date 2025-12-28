@@ -31,7 +31,7 @@ int main() {
     AccountManager am(db);{}
     BookManager bm(db, am);{}
     CmdParser parser;
-    Transaction trans(db);
+    Transaction trans(db, am);
     std::string line;
     while (true) {
         if (!std::getline(std::cin, line) ){
@@ -94,6 +94,7 @@ int main() {
                     }
                     break;
                 }
+                db.addLog(am.currentUserID(), "su to " + cmd.args[0], 0);
                 break;
             }
 
@@ -104,6 +105,7 @@ int main() {
                 } else {
                     std::cout << "Invalid\n";
                 }
+                db.addLog(am.currentUserID(), "logout", 0);
                 break;
             }
 
@@ -144,6 +146,7 @@ int main() {
                 if (!am.addUser(id, pwd, priv)) {
                     std::cout << "Invalid\n";
                 }
+                db.addLog(am.currentUserID(), "add user" + id, 0);
                 break;
             }
 
@@ -158,6 +161,7 @@ int main() {
                 } else {
                     std::cout << "Invalid\n";
                 }
+                db.addLog(am.currentUserID(), "delete user" + cmd.args[0], 0);
                 break;
             }
 
@@ -185,6 +189,7 @@ int main() {
                         std::cout << "Invalid\n";
                     }
                 }
+                db.addLog(am.currentUserID(), "change " + cmd.args[0] + " password", 0);
                 break;
             }
 
@@ -206,6 +211,7 @@ int main() {
                     //std::cerr << "Select fail\n";
                     std::cout << "Invalid\n";
                 }
+                db.addLog(am.currentUserID(), "select book " + cmd.args[0] , 0);
                 break;
             }
 
@@ -296,6 +302,7 @@ int main() {
                 if (!ok) {
                     std::cout << "Invalid\n";
                 }
+                db.addLog(am.currentUserID(), "modify book", 0);
                 break;
             }
 
@@ -368,7 +375,7 @@ int main() {
                 if (result.empty()) {
                     std::cout << '\n';
                 }
-
+                db.addLog(am.currentUserID(), "show book", 0);
                 break;
             }
 
@@ -401,8 +408,9 @@ int main() {
                     std::cout << "Invalid\n";
                 } else {
                     std::cout << std::fixed << std::setprecision(2) << cost << '\n';
-                    trans.add(cost);
+                    trans.add(cost, "BUY");
                 }
+                db.addLog(am.currentUserID(), "buy book " + cmd.args[0], cost);
                 break;
             }
 
@@ -440,7 +448,8 @@ int main() {
                     std::cout << "Invalid\n";
                     break;
                 }
-                trans.add(-totalCost);
+                trans.add(-totalCost, "IMPORT");
+                db.addLog(am.currentUserID(), "import book", -totalCost);
                 break;
             }
 
@@ -475,6 +484,63 @@ int main() {
                     trans.showFinance(cnt);
                     break;
                 }
+            }
+
+            case CommandType::REPORTFINANCE: {
+                if (am.currentPrivilege() < 7) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+                trans.reportFinance();
+                break;
+            }
+
+            case CommandType::REPORTEMLOYEE: {
+                if (am.currentPrivilege() != 7) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                std::vector<EmployeeRecord> recs;
+                if (!db.getEmployeeRecordAll(recs)) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                std::cout << "========== Employee Report ==========\n";
+                for (auto &r : recs) {
+                    std::cout << r.userID << "\t"
+                              << r.action << "\n";
+                }
+                std::cout << "====================================\n";
+                break;
+            }
+
+            case CommandType::LOG: {
+                if (am.currentPrivilege() != 7) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                std::vector<LogRecord> logs;
+                if (!db.getLogAll(logs)) {
+                    std::cout << "Invalid\n";
+                    break;
+                }
+
+                std::cout << "=============== LOG ===============\n";
+                for (auto &l : logs) {
+                    std::cout << l.userID << "\t"
+                              << l.action;
+                    if (l.money != 0) {
+                        std::cout << "\t"
+                                  << std::fixed << std::setprecision(2)
+                                  << l.money;
+                    }
+                    std::cout << "\n";
+                }
+                std::cout << "===================================\n";
+                break;
             }
 
             default:

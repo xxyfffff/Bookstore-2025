@@ -61,6 +61,8 @@ bool AccountManager::su(const std::string &userID,
     s.book.hasSelect = false;
     s.book.offset = -1;
     loginStack.push_back(s);
+
+    db.addEmployeeRecord(userID, "su");
     return true;
 }
 
@@ -68,6 +70,7 @@ bool AccountManager::logout() {
     if (loginStack.empty() || currentPrivilege() == 0) {
         return false;
     }
+    db.addEmployeeRecord(currentUserID() , "logout");
     loginStack.pop_back();
     return true;
 }
@@ -88,7 +91,7 @@ bool AccountManager::changePassword(const std::string &userID,
 
     if (oldPwd.empty()) return false;
     if (user.password != oldPwd) return false;
-
+    db.addEmployeeRecord(userID, "change password to " + newPwd);
     return db.updateUser(userID, newPwd);
 }
 
@@ -104,6 +107,7 @@ bool AccountManager::addUser(const std::string &userID,
         return false;
     }
 
+    db.addEmployeeRecord(currentUserID(), "add user" + userID);
     return db.addUser(userID, password, privilege);
 }
 
@@ -126,5 +130,6 @@ bool AccountManager::deleteUser(const std::string &userID) {
     }
 
     // 删除
+    db.addEmployeeRecord(currentUserID(), "delete user" + userID);
     return db.deleteUser(userID);
 }

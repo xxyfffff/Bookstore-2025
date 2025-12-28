@@ -55,9 +55,17 @@ public:
     std::vector<int> getAllBooks();
 
     // finance.data
-    bool addFinanceRecord(double delta);
+    bool addFinanceRecord(double delta, const std::string &userID, const std::string &type);
     bool getFinanceRecord(std::vector<FinanceRecord> & frs, int cnt);
     bool getFinanceRecordAll(std::vector<FinanceRecord> & frs);
+
+    // employee.data
+    void addEmployeeRecord(const std::string &userID, const std::string &action);
+    bool getEmployeeRecordAll(std::vector<EmployeeRecord> &out);
+
+    // log.data
+    void addLog(const std::string &userID, const std::string &action, double money);
+    bool getLogAll(std::vector<LogRecord> &out);
 
     void debugDumpKeyword(const std::string &tag);
 private:

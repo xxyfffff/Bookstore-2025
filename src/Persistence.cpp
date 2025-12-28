@@ -314,6 +314,12 @@ public:
     std::fstream financeFile;
     int financeCnt;
 
+    std::fstream employeeFile;
+    int employeeCnt;
+
+    std::fstream logFile;
+    int logCnt;
+
     Impl() : index("index_isbn.dat"), // isbn主索引
             nameIndex("index_name.dat"),
             authorIndex("index_author.dat"),
@@ -331,6 +337,7 @@ public:
         bookFile.seekg(0, std::ios::end);
         bookCount = bookFile.tellg() / sizeof(BookRecord);
 
+        // finance.dat
         financeFile.open("finance.dat",
             std::ios::in | std::ios::out | std::ios::binary);
 
@@ -346,6 +353,30 @@ public:
 
         financeFile.seekg(0, std::ios::end);
         financeCnt = financeFile.tellg() / sizeof(FinanceRecord);
+
+        // employee.dat
+        employeeFile.open("employee.dat",
+            std::ios::in | std::ios::out | std::ios::binary);
+        if (!employeeFile.is_open()) {
+            employeeFile.open("employee.dat", std::ios::out | std::ios::binary);
+            employeeFile.close();
+            employeeFile.open("employee.dat",
+                std::ios::in | std::ios::out | std::ios::binary);
+        }
+        employeeFile.seekg(0, std::ios::end);
+        employeeCnt = employeeFile.tellg() / sizeof(EmployeeRecord);
+
+        // log.dat
+        logFile.open("log.dat",
+            std::ios::in | std::ios::out | std::ios::binary);
+        if (!logFile.is_open()) {
+            logFile.open("log.dat", std::ios::out | std::ios::binary);
+            logFile.close();
+            logFile.open("log.dat",
+                std::ios::in | std::ios::out | std::ios::binary);
+        }
+        logFile.seekg(0, std::ios::end);
+        logCnt = logFile.tellg() / sizeof(LogRecord);
     }
 };
 
@@ -540,11 +571,25 @@ void Persistence::removeKeyword(const std::string &keyword, int offset) {
     impl->keywordIndex.remove(keyword, offset);
 }
 
-bool Persistence::addFinanceRecord(double delta) {
-    FinanceRecord d;
-    d.delta = delta;
+bool Persistence::addFinanceRecord(double delta,
+                                   const std::string &userID,
+                                   const std::string &type) {
+    if (!impl->financeFile.is_open()) return false;
+
+    FinanceRecord rec{};
+    rec.delta = delta;
+
+    std::strncpy(rec.userID, userID.c_str(), 63);
+    rec.userID[63] = '\0';
+
+    std::strncpy(rec.type, type.c_str(), 31);
+    rec.type[31] = '\0';
+
     impl->financeFile.seekp(0, std::ios::end);
-    impl->financeFile.write(reinterpret_cast<const char*>(&d), sizeof(FinanceRecord));
+    impl->financeFile.write(
+        reinterpret_cast<const char*>(&rec),
+        sizeof(FinanceRecord)
+    );
     impl->financeFile.flush();
 
     impl->financeCnt++;
@@ -597,4 +642,65 @@ bool Persistence::getFinanceRecordAll(std::vector<FinanceRecord> & frs) {
 
 void Persistence::debugDumpKeyword(const std::string &tag) {
     impl->keywordIndex.debug_dump("keyword");
+}
+
+void Persistence::addEmployeeRecord(const std::string &userID,
+                                    const std::string &action) {
+    EmployeeRecord r{};
+    strncpy(r.userID, userID.c_str(), 63);
+    strncpy(r.action, action.c_str(), 127);
+
+    impl->employeeFile.seekp(0, std::ios::end);
+    impl->employeeFile.write(
+        reinterpret_cast<char*>(&r),
+        sizeof(EmployeeRecord)
+    );
+    impl->employeeFile.flush();
+    impl->employeeCnt++;
+}
+
+bool Persistence::getEmployeeRecordAll(
+        std::vector<EmployeeRecord> &out) {
+    out.clear();
+
+    std::ifstream file("employee.dat", std::ios::binary);
+    if (!file.is_open()) return false;
+
+    EmployeeRecord r;
+    while (file.read(reinterpret_cast<char*>(&r),
+                     sizeof(EmployeeRecord))) {
+        out.push_back(r);
+                     }
+    return true;
+}
+
+void Persistence::addLog(const std::string &userID,
+                         const std::string &action,
+                         double money) {
+    LogRecord r{};
+    strncpy(r.userID, userID.c_str(), 63);
+    strncpy(r.action, action.c_str(), 127);
+    r.money = money;
+
+    impl->logFile.seekp(0, std::ios::end);
+    impl->logFile.write(
+        reinterpret_cast<char*>(&r),
+        sizeof(LogRecord)
+    );
+    impl->logFile.flush();
+    impl->logCnt++;
+}
+
+bool Persistence::getLogAll(std::vector<LogRecord> &out) {
+    out.clear();
+
+    std::ifstream file("log.dat", std::ios::binary);
+    if (!file.is_open()) return false;
+
+    LogRecord r;
+    while (file.read(reinterpret_cast<char*>(&r),
+                     sizeof(LogRecord))) {
+        out.push_back(r);
+                     }
+    return true;
 }
